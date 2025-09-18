@@ -20,22 +20,18 @@ dd MULTIBOOT_MAGIC
 dd MULTIBOOT_FLAGS
 dd MULTIBOOT_CHECKSUM
 
-; --- Stack alanı ---
 SECTION .bss
 align 16
 stack_bottom:
     resb 16384           ; 16 KB stack
 stack_top:
 
-; --- Giriş noktası ---
 SECTION .text
 start:
-    ; Basit bir stack kur
     mov esp, stack_top
     
     push ebx
     push eax
-    ; kernel_main() çağır
     call kernel_main
 
 .hang:

@@ -1,5 +1,6 @@
 
-multiboot_info
+Multiboot_info
+---
 | Bit    | Hex mask   | Alan(lar)                           | Anlamı                                                       |
 | ------ | ---------- | ----------------------------------- | ------------------------------------------------------------ |
 | **0**  | 0x00000001 | `mem_lower`, `mem_upper`            | 1 MB altı ve üstü bellek boyutları geçerli. (KB cinsinden)   |
@@ -15,8 +16,9 @@ multiboot_info
 | **10** | 0x00000400 | `apm_table`                         | APM (Advanced Power Management) tabloları geçerli.           |
 | **11** | 0x00000800 | `vbe_control_info`, `vbe_mode_info` | VESA BIOS Extension (grafik mod bilgisi) geçerli.            |
 | **12** | 0x00001000 | `framebuffer_addr`, `framebuffer_*` | Framebuffer bilgisi (modern grafik modu) geçerli.            |
----
 
+Boot Loader karşılaştırma
+---
 | Özellik                | GRUB                       | Limine + Stivale2                  |
 | ---------------------- | -------------------------- | ---------------------------------- |
 | Amaç                   | Genel amaçlı bootloader    | OS geliştiriciler için optimize    |
@@ -25,14 +27,32 @@ multiboot_info
 | Karmaşıklık            | Ağır, config dosyaları var | Çok basit, tek binary yeterli      |
 | Geliştirme hızı        | Eski, yavaş                | Aktif, modern                      |
 | Kernel bilgisi aktarma | Multiboot yapıları         | Çok daha düzenli Stivale2 yapıları |
----
-MULTIBOOT_FLAGS bitleri
 
-| Bit   | Anlamı                               | Açıklama                                                                   |
-| ----- | ------------------------------------ | -------------------------------------------------------------------------- |
-| 0     | Page-align modules                   | Modülleri 4 KB hizalı yükle                                                |
-| 1     | Memory info required                 | Bellek bilgisi verilmezse boot etme                                        |
-| 2     | Video mode request                   | Grafik modu iste                                                           |
-| 3–15  | Reserved                             | Kullanılmaz, hep 0 olmalı                                                  |
-| 16    | AOUT kludge (adres alanları geçerli) | load\_addr, load\_end\_addr, bss\_end\_addr, entry\_addr alanlarını kullan |
-| 17–31 | Reserved                             | Kullanılmaz, hep 0 olmalı                                                  |
+MULTIBOOT_FLAGS bitleri
+---
+
+| Bit   | Anlamı                               | Açıklama                                                                   | 
+| ----- | ------------------------------------ | -------------------------------------------------------------------------- | 
+| 0     | Page-align modules                   | Modülleri 4 KB hizalı yükle                                                | 
+| 1     | Memory info required                 | Bellek bilgisi verilmezse boot etme                                        | 
+| 2     | Video mode request                   | Grafik modu iste                                                           | 
+| 3–15  | Reserved                             | Kullanılmaz, hep 0 olmalı                                                  | 
+| 16    | AOUT kludge (adres alanları geçerli) | load\_addr, load\_end\_addr, bss\_end\_addr, entry\_addr alanlarını kullan | 
+| 17–31 | Reserved                             | Kullanılmaz, hep 0 olmalı                                                  | 
+
+Uniq Key Scancode
+---
+| Key     | Value |
+| ------- | ----- |
+| ALT     |  56   |
+| CTRL    |  29   |
+| L-SHIFT |  42   |
+| R-SHIFT |  54   |
+| CAPSLCK |  58   |
+| ESC     |  1    |
+| DEL     |  83   |
+| R-ARROW |  77   |
+| L-ARROW |  75   |
+| U-ARROW |  72   |
+| ALT-GR  |  56   |
+| D-ARROW |  80   |

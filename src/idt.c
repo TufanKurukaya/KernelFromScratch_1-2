@@ -15,14 +15,10 @@ void	idt_set_gate(int num, uint32_t base, uint16_t sel, uint8_t flags)
 	idt[num].flags = flags; // 0x8E: present|ring0|32-bit interrupt gate
 }
 
-extern void				default_exception_stub(void);
 
 void	idt_init(void)
 {
 	idtp.limit = (sizeof(struct idt_entry) * 256) - 1;
 	idtp.base = (uint32_t)&idt;
-	// Default exception handler'ı tüm entry'lere set et
-	for (int i = 0; i < 256; ++i)
-		idt_set_gate(i, (uint32_t)default_exception_stub, 0x08, 0x8E);
 	idt_load(); // lidt
 }

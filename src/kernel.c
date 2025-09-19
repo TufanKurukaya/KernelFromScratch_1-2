@@ -1,4 +1,5 @@
 // src/kernel.c
+#include "gdt.h"
 #include "idt.h"
 #include "pic.h"
 #include "vga.h"
@@ -6,22 +7,21 @@
 #include <stdint.h>
 
 // Function prototypes
-void				vga_print(const char *s);
-int					u32_to_hex(uint32_t n, char *out);
-int					u32_to_dec(uint32_t v, char *out);
-void				keyboard_handler(void);
+void					vga_print(const char *s);
+int						u32_to_dec(uint32_t v, char *out);
+void					keyboard_handler(void);
 
-uint8_t             key_flag = 0;
+uint8_t					key_flag = 0;
 
 static uint16_t *const vga_buffer = (uint16_t *)VGA_MEM;
-static size_t		cursor_x = 0, cursor_y = 0;
-static uint8_t		vga_color = 0x07;
-extern void			isr_irq1_stub(void);
-extern void			default_exception_stub(void);
-static inline void	putchar(char c);
+static size_t			cursor_x = 0, cursor_y = 0;
+static uint8_t			vga_color = 0x07;
+extern void				isr_irq1_stub(void);
+extern void				default_exception_stub(void);
+static inline void		putchar(char c);
 
 // Basit US QWERTY scancode tablosu (sadece küçük harfler ve rakamlar)
-static const char	scancode_table[128] = {
+static const char		scancode_table[128] = {
 	0,
 	27,
 	'1',
@@ -116,12 +116,12 @@ void	keyboard_handler(void)
 {
 	unsigned char	scancode;
 	char			c;
-	
+
 	scancode = inb(0x60);
 	if (scancode & 0x80)
 		return ;
 	c = scancode_to_char(scancode);
-	if ((c < 127 && c > 31) || (c <= 13 &&  c >= 9))
+	if ((c < 127 && c > 31) || (c <= 13 && c >= 9))
 		putchar(c);
 }
 
@@ -137,7 +137,8 @@ void	scroll(void)
 	for (size_t x = 0; x < VGA_WIDTH; x++)
 	{
 		vga_buffer[(VGA_HEIGHT - 1) * VGA_WIDTH
-			+ x] = (uint16_t)' ' | (uint16_t)VGA_COLOR(VGA_LIGHT_GREY, VGA_BLACK) << 8;
+			+ x] = (uint16_t)' ' | (uint16_t)VGA_COLOR(VGA_LIGHT_GREY,
+				VGA_BLACK) << 8;
 	}
 	cursor_y = VGA_HEIGHT - 1;
 }
@@ -201,6 +202,14 @@ int	u32_to_dec(uint32_t v, char *out)
 	return (n);
 }
 
+static inline uint16_t	read_cs(void)
+{
+	uint16_t	s;
+
+	__asm__("mov %%cs,%0" : "=r"(s));
+	return (s);
+}
+
 void	kernel_main(uint32_t magic, uint32_t addr)
 {
 	char	str[12] = {0};
@@ -216,11 +225,11 @@ void	kernel_main(uint32_t magic, uint32_t addr)
 		while (1)
 			__asm__ __volatile__("hlt");
 	}
-
+	gdt_init();
 	idt_init();
 	pic_remap(0x20, 0x28);
 	pic_mask_all_irqs();
-	idt_set_gate(0x21, (uint32_t)isr_irq1_stub, 0x08, 0x8E);
+	idt_set_gate(0x21, (uint32_t)isr_irq1_stub, KERNEL_CS, 0x8E);
 	pic_unmask_irq1();
 	__asm__ __volatile__("sti");
 	for (;;)

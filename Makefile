@@ -12,9 +12,9 @@ ASMFLAGS := -f elf32
 CFLAGS   := -m32 -ffreestanding -fno-builtin -fno-stack-protector -Os -Wall -Wextra -nostdlib -nodefaultlibs -fno-unwind-tables
 LDFLAGS  := -m elf_i386 -T linker.ld -nostdlib
 
-SRCS_C   := $(SRC_DIR)/kernel.c $(SRC_DIR)/idt.c $(SRC_DIR)/pic.c
-SRCS_S   := $(SRC_DIR)/boot.s $(SRC_DIR)/idt_load.s $(SRC_DIR)/isr_irq1.s
-OBJS     := $(BUILD)/boot.o $(BUILD)/kernel.o $(BUILD)/idt.o $(BUILD)/idt_load.o $(BUILD)/pic.o $(BUILD)/isr_irq1.o
+SRCS_C   := $(SRC_DIR)/kernel.c $(SRC_DIR)/idt.c $(SRC_DIR)/pic.c $(SRC_DIR)/gdt.c
+SRCS_S   := $(SRC_DIR)/boot.s $(SRC_DIR)/idt_load.s $(SRC_DIR)/isr_irq1.s $(SRC_DIR)/gdt_load.s
+OBJS     := $(BUILD)/boot.o $(BUILD)/kernel.o $(BUILD)/idt.o $(BUILD)/idt_load.o $(BUILD)/pic.o $(BUILD)/isr_irq1.o $(BUILD)/gdt.o $(BUILD)/gdt_load.o
 
 .PHONY: all clean run iso
 

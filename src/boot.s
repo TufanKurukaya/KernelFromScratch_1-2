@@ -7,13 +7,13 @@ EXTERN kernel_main
 
 ; --- Multiboot header (GRUB'un bizi kernel olarak tanıması için) ---
 ; Magic   : 0x1BADB002
-; Flags   : 0x00000000 (basit)
+; Flags   : 0x00000003 (basit)
 ; Checksum: Magic + Flags + Checksum = 0 olacak şekilde
 
 SECTION .multiboot
 align 4
 MULTIBOOT_MAGIC   equ 0x1BADB002
-MULTIBOOT_FLAGS   equ 0
+MULTIBOOT_FLAGS   equ 0x00000003
 MULTIBOOT_CHECKSUM equ -(MULTIBOOT_MAGIC + MULTIBOOT_FLAGS)
 
 dd MULTIBOOT_MAGIC

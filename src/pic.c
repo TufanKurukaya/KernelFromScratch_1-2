@@ -1,6 +1,6 @@
 // src/pic.c
-#include "io.h"
-#include "pic.h"
+#include "inc/io.h"
+#include "inc/pic.h"
 
 #define PIC1_CMD 0x20
 #define PIC1_DATA 0x21
@@ -22,10 +22,10 @@ void	pic_remap(int offset1, int offset2)
 	outb(PIC2_CMD, ICW1_INIT | ICW1_ICW4);
 	outb(PIC1_DATA, offset1);
 	outb(PIC2_DATA, offset2);
-	outb(PIC1_DATA, 0x04); // PIC2, IRQ2'de
-	outb(PIC2_DATA, 0x02);
 	outb(PIC1_DATA, ICW4_8086);
 	outb(PIC2_DATA, ICW4_8086);
+	outb(PIC1_DATA, 0x04);
+	outb(PIC2_DATA, 0x02);
 	outb(PIC1_DATA, a1);
 	outb(PIC2_DATA, a2);
 }
@@ -35,7 +35,7 @@ void	pic_unmask_irq1(void)
 	uint8_t	mask;
 
 	mask = inb(PIC1_DATA);
-	mask &= ~(1 << 1); // IRQ1 bitini 0 yap
+	mask &= ~(1 << 1);
 	outb(PIC1_DATA, mask);
 }
 
@@ -46,6 +46,6 @@ void	pic_send_eoi_master(void)
 
 void	pic_mask_all_irqs(void)
 {
-	outb(PIC1_DATA, 0xFF); // Tüm master PIC interrupt'larını maskele
-	outb(PIC2_DATA, 0xFF); // Tüm slave PIC interrupt'larını maskele
+	outb(PIC1_DATA, 0xFF);
+	outb(PIC2_DATA, 0xFF);
 }

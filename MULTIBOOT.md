@@ -40,6 +40,18 @@ MULTIBOOT_FLAGS bitleri
 | 16    | AOUT kludge (adres alanları geçerli) | load\_addr, load\_end\_addr, bss\_end\_addr, entry\_addr alanlarını kullan | 
 | 17–31 | Reserved                             | Kullanılmaz, hep 0 olmalı                                                  | 
 
+outb inb Portlar
+---
+| Port  | Cihaz           | Görev                               |
+| ----- | --------------- | ----------------------------------- |
+| 0x3D4 | VGA (CRTC)      | Hangi cursor register’ını seçer     |
+| 0x3D5 | VGA (CRTC)      | Cursor register değerini okur/yazar |
+| 0x20  | Master PIC CMD  | Komut (init, EOI vs)                |
+| 0x21  | Master PIC DATA | Maske/ayar                          |
+| 0xA0  | Slave PIC CMD   | Komut                               |
+| 0xA1  | Slave PIC DATA  | Maske/ayar                          |
+
+
 Uniq Key Scancode
 ---
 | Key     | Value |

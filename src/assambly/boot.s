@@ -1,14 +1,8 @@
-; src/boot.s
-; NASM syntax (32-bit)
+; src/assambly/boot.s
 
 BITS 32
 GLOBAL start
 EXTERN kernel_main
-
-; --- Multiboot header (GRUB'un bizi kernel olarak tanıması için) ---
-; Magic   : 0x1BADB002
-; Flags   : 0x00000003 (basit)
-; Checksum: Magic + Flags + Checksum = 0 olacak şekilde
 
 SECTION .multiboot
 align 4
@@ -23,7 +17,7 @@ dd MULTIBOOT_CHECKSUM
 SECTION .bss
 align 16
 stack_bottom:
-    resb 16384           ; 16 KB stack
+    resb 16384
 stack_top:
 
 SECTION .text

@@ -1,18 +1,15 @@
-; src/isr_irq1.asm (NASM, 32-bit)
+; src/assambly/isr_irq1.s
 BITS 32
 GLOBAL isr_irq1_stub
 EXTERN keyboard_handler
 EXTERN pic_send_eoi_master
 
-
 isr_irq1_stub:
     pusha
     cld
     
-    ; Önce PIC'e EOI gönder
     call pic_send_eoi_master
     
-    ; Sonra handler'ı çağır
     call keyboard_handler
     
     popa

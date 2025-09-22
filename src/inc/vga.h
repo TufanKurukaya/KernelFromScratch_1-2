@@ -1,4 +1,4 @@
-// src/vga.h
+// src/inc/vga.h
 
 #include <stddef.h>
 #include <stdint.h>

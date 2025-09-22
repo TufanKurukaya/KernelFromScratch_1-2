@@ -1,12 +1,12 @@
 // src/kernel.c
-#include "gdt.h"
-#include "idt.h"
-#include "pic.h"
-#include "vga.h"
+#include "inc/gdt.h"
+#include "inc/idt.h"
+#include "inc/io.h"
+#include "inc/pic.h"
+#include "inc/vga.h"
 #include <stddef.h>
 #include <stdint.h>
 
-// Function prototypes
 void					vga_print(const char *s);
 int						u32_to_dec(uint32_t v, char *out);
 void					keyboard_handler(void);
@@ -20,81 +20,19 @@ extern void				isr_irq1_stub(void);
 extern void				default_exception_stub(void);
 static inline void		putchar(char c);
 
-// Basit US QWERTY scancode tablosu (sadece küçük harfler ve rakamlar)
 static const char		scancode_table[128] = {
-	0,
-	27,
-	'1',
-	'2',
-	'3',
-	'4',
-	'5',
-	'6',
-	'7',
-	'8',
-	'9',
-	'0',
-	'-',
-	'=',
-	'\b', /* 0x0E = backspace */
-	'\t',
+	0,   27,  '1', '2', '3', '4', '5', '6', '7', '8', '9',  '0', '-',  '=',
+		 '\b', '\t',
 
-	/* 0x0F = tab */
-	'q',
-	'w',
-	'e',
-	'r',
-	't',
-	'y',
-	'u',
-	'i',
-	'o',
-	'p',
-	'[',
-	']',
-	'\n',
-	/* 0x1C = Enter */
-	0,
+	'q', 'w', 'e', 'r', 't', 'y', 'u', 'i', 'o', 'p', '[',  ']', '\n', 0,
 
-	/* 0x1D = Ctrl */
-	'a',
-	's',
-	'd',
-	'f',
-	'g',
-	'h',
-	'j',
-	'k',
-	'l',
-	';',
-	'\'',
-	'`',
-	0,
-	/* 0x2A = Left shift */
-	'\\',
-	'z',
-	'x',
-	'c',
-	'v',
-	'b',
-	'n',
-	'm',
-	',',
-	'.',
-	'/',
-	0,
-	/* 0x36 = Right shift */
-	'*',
-	0,
+	'a', 's', 'd', 'f', 'g', 'h', 'j', 'k', 'l', ';', '\'', '`', 0,    '\\',
+		'z',  'x',  'c', 'v', 'b', 'n', 'm', ',', '.', '/', 0, '*', 0,
 
-	/* 0x38 = Alt */
 	' ',
 
-	/* 0x39 = Space */
 	0,
 
-	/* Caps lock */
-	// buradan sonrası F1-F12 ve özel tuşlar
 };
 
 char	scancode_to_char(unsigned char scancode)
@@ -104,12 +42,87 @@ char	scancode_to_char(unsigned char scancode)
 	return (scancode_table[scancode]);
 }
 
-unsigned char	inb(unsigned short port)
+void	vga_enable_cursor(uint8_t cursor_start, uint8_t cursor_end)
 {
-	unsigned char	ret;
+	uint8_t	cur_start;
+	uint8_t	cur_end;
 
-	asm volatile("inb %1, %0" : "=a"(ret) : "dN"(port));
-	return (ret);
+	outb(0x3D4, 0x0A);
+	cur_start = inb(0x3D5);
+	outb(0x3D5, (cur_start & 0xC0) | (cursor_start & 0x1F));
+	outb(0x3D4, 0x0B);
+	cur_end = inb(0x3D5);
+	outb(0x3D5, (cur_end & 0xE0) | (cursor_end & 0x1F));
+}
+
+void	vga_disable_cursor(void)
+{
+	outb(0x3D4, 0x0A);
+	outb(0x3D5, 0x20);
+}
+
+void	vga_update_hw_cursor(void)
+{
+	uint16_t	pos;
+
+	pos = (uint16_t)(cursor_y * VGA_WIDTH + cursor_x);
+	outb(0x3D4, 0x0F);
+	outb(0x3D5, (uint8_t)(pos & 0xFF)); // low
+	outb(0x3D4, 0x0E);
+	outb(0x3D5, (uint8_t)((pos >> 8) & 0xFF)); // high
+}
+
+static inline void	vga_put_entry_at(char c, uint8_t color, size_t x, size_t y)
+{
+	volatile uint16_t	*vga;
+
+	vga = (uint16_t *)VGA_MEM;
+	vga[y * VGA_WIDTH + x] = ((uint16_t)color << 8) | (uint8_t)c;
+}
+
+static void	vga_scroll_if_needed(void)
+{
+	if (cursor_y < VGA_HEIGHT)
+		return ;
+	for (size_t y = 1; y < VGA_HEIGHT; ++y)
+	{
+		for (size_t x = 0; x < VGA_WIDTH; ++x)
+		{
+			((uint16_t *)VGA_MEM)[(y - 1) * VGA_WIDTH
+				+ x] = ((uint16_t *)VGA_MEM)[y * VGA_WIDTH + x];
+		}
+	}
+	for (size_t x = 0; x < VGA_WIDTH; ++x)
+	{
+		((uint16_t *)VGA_MEM)[(VGA_HEIGHT - 1) * VGA_WIDTH
+			+ x] = ((uint16_t)0x07 << 8) | ' ';
+	}
+	cursor_y = VGA_HEIGHT - 1;
+}
+
+void	handeler_arrow(char c)
+{
+	if (c == 77)
+	{
+		if (cursor_x < VGA_WIDTH)
+			cursor_x++;
+	}
+	else if (c == 75)
+	{
+		if (cursor_x > 0)
+			cursor_x--;
+	}
+	else if (c == 72)
+	{
+		if (cursor_y > 0)
+			cursor_y--;
+	}
+	else
+	{
+		if (cursor_y < VGA_HEIGHT)
+			cursor_y++;
+	}
+	vga_update_hw_cursor();
 }
 
 void	keyboard_handler(void)
@@ -121,7 +134,9 @@ void	keyboard_handler(void)
 	if (scancode & 0x80)
 		return ;
 	c = scancode_to_char(scancode);
-	if ((c < 127 && c > 31) || (c <= 13 && c >= 9))
+	if (scancode == 77 || scancode == 75 || scancode == 72 || scancode == 80)
+		handeler_arrow(scancode);
+	else if (c < 127)
 		putchar(c);
 }
 
@@ -145,10 +160,38 @@ void	scroll(void)
 
 static inline void	putchar(char c)
 {
+	char	buf[10];
+
 	if (c == '\n')
 	{
 		cursor_x = 0;
 		cursor_y++;
+	}
+	else if (c == '\t')
+		cursor_x = (cursor_x + 4) & ~(size_t)3;
+	else if (c == '\b')
+	{
+		u32_to_dec((char)vga_buffer[cursor_y * VGA_WIDTH + (cursor_x - 1)],
+			buf);
+		vga_put_entry_at(buf[0], vga_color, 70, 15);
+		vga_put_entry_at(buf[1], vga_color, 71, 15);
+		vga_put_entry_at(buf[2], vga_color, 72, 15);
+		if (cursor_x > 0)
+		{
+			cursor_x--;
+			vga_put_entry_at(' ', vga_color, cursor_x, cursor_y);
+		}
+		else if (cursor_y > 0)
+		{
+			cursor_y--;
+			cursor_x = VGA_WIDTH - 1;
+			while (cursor_x > 0 && (vga_buffer[cursor_y * VGA_WIDTH
+					+ cursor_x] & 0xFF) == ' ')
+				cursor_x--;
+			if (cursor_x < VGA_WIDTH - 1 && (vga_buffer[cursor_y * VGA_WIDTH
+					+ cursor_x] & 0xFF) != ' ')
+				cursor_x++;
+		}
 	}
 	else
 	{
@@ -163,6 +206,7 @@ static inline void	putchar(char c)
 	}
 	if (cursor_y >= VGA_HEIGHT)
 		scroll();
+	vga_update_hw_cursor();
 }
 
 void	vga_print(const char *s)
@@ -214,11 +258,9 @@ void	kernel_main(uint32_t magic, uint32_t addr)
 {
 	char	str[12] = {0};
 
-	// Önce interrupt'ları kapat
 	__asm__ __volatile__("cli");
 	vga_clear(VGA_COLOR(VGA_LIGHT_GREY, VGA_BLACK));
 	vga_color = VGA_COLOR(VGA_WHITE, VGA_BLACK);
-	vga_print("Kernel starting...\n");
 	if (magic != 0x2BADB002)
 	{
 		vga_print("Bad multiboot magic\n");
@@ -232,6 +274,8 @@ void	kernel_main(uint32_t magic, uint32_t addr)
 	idt_set_gate(0x21, (uint32_t)isr_irq1_stub, KERNEL_CS, 0x8E);
 	pic_unmask_irq1();
 	__asm__ __volatile__("sti");
+	vga_enable_cursor(0, 15);
+	vga_update_hw_cursor();
 	for (;;)
 		__asm__ __volatile__("hlt");
 }

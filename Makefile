@@ -13,7 +13,7 @@ CFLAGS   := -m32 -ffreestanding -fno-builtin -fno-stack-protector -Os -Wall -Wex
 LDFLAGS  := -m elf_i386 -T linker.ld -nostdlib
 
 SRCS_C   := $(SRC_DIR)/kernel.c $(SRC_DIR)/idt.c $(SRC_DIR)/pic.c $(SRC_DIR)/gdt.c
-SRCS_S   := $(SRC_DIR)/boot.s $(SRC_DIR)/idt_load.s $(SRC_DIR)/isr_irq1.s $(SRC_DIR)/gdt_load.s
+SRCS_S   := $(SRC_DIR)/assambly/boot.s $(SRC_DIR)/assambly/idt_load.s $(SRC_DIR)/assambly/isr_irq1.s $(SRC_DIR)/assambly/gdt_load.s
 OBJS     := $(BUILD)/boot.o $(BUILD)/kernel.o $(BUILD)/idt.o $(BUILD)/idt_load.o $(BUILD)/pic.o $(BUILD)/isr_irq1.o $(BUILD)/gdt.o $(BUILD)/gdt_load.o
 
 .PHONY: all clean run iso
@@ -23,7 +23,7 @@ all: $(TARGET)
 $(BUILD):
 	mkdir -p $(BUILD)
 
-$(BUILD)/%.o: $(SRC_DIR)/%.s | $(BUILD)
+$(BUILD)/%.o: $(SRC_DIR)/assambly/%.s | $(BUILD)
 	$(ASM) $(ASMFLAGS) $< -o $@
 
 $(BUILD)/%.o: $(SRC_DIR)/%.c | $(BUILD)

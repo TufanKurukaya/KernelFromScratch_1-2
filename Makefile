@@ -8,9 +8,9 @@ CC       := gcc
 LD       := ld
 STRIP    := objcopy
 
-ASMFLAGS := -f elf32
-CFLAGS   := -m32 -ffreestanding -fno-builtin -fno-stack-protector -Os -Wall -Wextra -nostdlib -nodefaultlibs -fno-unwind-tables
-LDFLAGS  := -m elf_i386 -T linker.ld -nostdlib
+ASMFLAGS := -f elf32 #-g -F dwarf
+CFLAGS   := -m32 -ffreestanding -fno-builtin -fno-stack-protector -Os -Wall -Wextra -nostdlib -nodefaultlibs -fno-unwind-tables -g
+LDFLAGS  := -m elf_i386 -T linker.ld -nostdlib -g
 
 SRCS_C   := $(SRC_DIR)/kernel.c $(SRC_DIR)/idt.c $(SRC_DIR)/pic.c $(SRC_DIR)/gdt.c
 SRCS_S   := $(SRC_DIR)/assambly/boot.s $(SRC_DIR)/assambly/idt_load.s $(SRC_DIR)/assambly/isr_irq1.s $(SRC_DIR)/assambly/gdt_load.s
@@ -48,9 +48,14 @@ run-k: $(TARGET)
 
 	
 clean:
-	rm -rf $(BUILD) $(TARGET) $(ISO)
+	rm -rf $(BUILD) 
+
+fclean: clean
+	rm -rf $(ISO) $(TARGET) 
 	rm -rf iso/boot/kernel.bin
 
 info:
 	objdump -h $(TARGET)
 	readelf -l $(TARGET)
+
+re: fclean all

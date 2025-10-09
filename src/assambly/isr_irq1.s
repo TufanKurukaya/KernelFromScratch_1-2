@@ -7,10 +7,9 @@ EXTERN pic_send_eoi_master
 isr_irq1_stub:
     pusha
     cld
+    call keyboard_handler
     
     call pic_send_eoi_master
-    
-    call keyboard_handler
     
     popa
     iretd

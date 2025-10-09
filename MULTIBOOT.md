@@ -68,3 +68,16 @@ Uniq Key Scancode
 | U-ARROW |  72   |
 | ALT-GR  |  56   |
 | D-ARROW |  80   |
+
+
+Segment register'ı
+---
+| Register | Ne için kullanılır?                   | Senin durumda değer  |
+| -------- | ------------------------------------- | -------------------- |
+| **CS**   | Kod (instruction fetch)               | `0x08` (kernel code) |
+| **DS**   | Veri (normal değişkenler)             | `0x10` (kernel data) |
+| **SS**   | Stack (push/pop/call/ret)             | `0x10` (kernel data) |
+| **ES**   | Ek veri, string komut hedefi          | `0x10` (kernel data) |
+| **FS**   | Ek veri, modern OS’te thread-local    | `0x10` (kernel data) |
+| **GS**   | Ek veri, modern OS’te CPU/thread info | `0x10` (kernel data) |
+

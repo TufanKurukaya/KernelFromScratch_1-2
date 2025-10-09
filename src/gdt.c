@@ -25,6 +25,7 @@ void	gdt_init(void)
 	gdt_set(0, 0, 0, 0, 0);
 	gdt_set(1, 0, 0xFFFFF, 0x9A, 0xCF);
 	gdt_set(2, 0, 0xFFFFF, 0x92, 0xCF);
+	// user icin de ayarlanacak
 	gdt_load();
 	gdt_reload_segments();
 }

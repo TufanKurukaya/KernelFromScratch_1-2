@@ -80,26 +80,6 @@ static inline void	vga_put_entry_at(char c, uint8_t color, size_t x, size_t y)
 	vga[y * VGA_WIDTH + x] = ((uint16_t)color << 8) | (uint8_t)c;
 }
 
-static void	vga_scroll_if_needed(void)
-{
-	if (cursor_y < VGA_HEIGHT)
-		return ;
-	for (size_t y = 1; y < VGA_HEIGHT; ++y)
-	{
-		for (size_t x = 0; x < VGA_WIDTH; ++x)
-		{
-			((uint16_t *)VGA_MEM)[(y - 1) * VGA_WIDTH
-				+ x] = ((uint16_t *)VGA_MEM)[y * VGA_WIDTH + x];
-		}
-	}
-	for (size_t x = 0; x < VGA_WIDTH; ++x)
-	{
-		((uint16_t *)VGA_MEM)[(VGA_HEIGHT - 1) * VGA_WIDTH
-			+ x] = ((uint16_t)0x07 << 8) | ' ';
-	}
-	cursor_y = VGA_HEIGHT - 1;
-}
-
 void	handeler_arrow(char c)
 {
 	if (c == 77)
@@ -123,6 +103,55 @@ void	handeler_arrow(char c)
 			cursor_y++;
 	}
 	vga_update_hw_cursor();
+}
+void	flag_determine(unsigned char scancode)
+{
+	switch (scancode)
+	{
+	case 0x38: // alt
+		key_flag |= 1 << 0;
+		break ;
+	case 0x1D: // ctrl
+		key_flag |= 1 << 1;
+		break ;
+	case 0x2A: // l shift
+		key_flag |= 1 << 2;
+		break ;
+	case 0x36: // r shift
+		key_flag |= 1 << 3;
+		break ;
+	case 0x3A: // capsloc
+		key_flag |= 1 << 4;
+		break ;
+	case 0x1: // esc
+		key_flag |= 1 << 5;
+		break ;
+	case 0x53: // del
+		key_flag |= 1 << 6;
+		break ;
+	// Relase
+	case 0x38 + 0x80:
+		key_flag ^= 1 << 0;
+		break ;
+	case 0x1D + 0x80: // ctrl
+		key_flag ^= 1 << 1;
+		break ;
+	case 0x2A + 0x80: // l shift
+		key_flag ^= 1 << 2;
+		break ;
+	case 0x36 + 0x80: // r shift
+		key_flag ^= 1 << 3;
+		break ;
+	case 0x3A + 0x80:       // capsloc
+		key_flag ^= 1 << 4; // TO DO bas cek tur sayaci yapilacak
+		break ;
+	case 0x1 + 0x80: // esc
+		key_flag ^= 1 << 5;
+		break ;
+	case 0x53 + 0x80: // del
+		key_flag ^= 1 << 6;
+		break ;
+	}
 }
 
 void	keyboard_handler(void)
@@ -171,11 +200,6 @@ static inline void	putchar(char c)
 		cursor_x = (cursor_x + 4) & ~(size_t)3;
 	else if (c == '\b')
 	{
-		u32_to_dec((char)vga_buffer[cursor_y * VGA_WIDTH + (cursor_x - 1)],
-			buf);
-		vga_put_entry_at(buf[0], vga_color, 70, 15);
-		vga_put_entry_at(buf[1], vga_color, 71, 15);
-		vga_put_entry_at(buf[2], vga_color, 72, 15);
 		if (cursor_x > 0)
 		{
 			cursor_x--;
@@ -254,10 +278,8 @@ static inline uint16_t	read_cs(void)
 	return (s);
 }
 
-void	kernel_main(uint32_t magic, uint32_t addr)
+void	kernel_main(uint32_t magic)
 {
-	char	str[12] = {0};
-
 	__asm__ __volatile__("cli");
 	vga_clear(VGA_COLOR(VGA_LIGHT_GREY, VGA_BLACK));
 	vga_color = VGA_COLOR(VGA_WHITE, VGA_BLACK);

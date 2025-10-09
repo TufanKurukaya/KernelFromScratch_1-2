@@ -4,6 +4,7 @@
 #include "inc/io.h"
 #include "inc/pic.h"
 #include "inc/vga.h"
+#include "inc/utils.h"
 #include <stddef.h>
 #include <stdint.h>
 
@@ -143,7 +144,10 @@ void	flag_determine(unsigned char scancode)
 		key_flag ^= 1 << 3;
 		break ;
 	case 0x3A + 0x80:       // capsloc
-		key_flag ^= 1 << 4; // TO DO bas cek tur sayaci yapilacak
+		if ((key_flag & 0x90) == 0x90) // 0x90 = 10010000
+			key_flag ^= 0x90; // TO DO bas cek tur sayaci yapilacak
+		else if (!((key_flag & 0x80) == 0x80))
+			key_flag |= 0x80;
 		break ;
 	case 0x1 + 0x80: // esc
 		key_flag ^= 1 << 5;
@@ -160,12 +164,18 @@ void	keyboard_handler(void)
 	char			c;
 
 	scancode = inb(0x60);
+	flag_determine(scancode);
 	if (scancode & 0x80)
+	{
+		c = 0;	
 		return ;
+	}
 	c = scancode_to_char(scancode);
+	if (((key_flag & 0x10) != 0) ^ ((key_flag & 0x0C) != 0) && ft_isalpha(c))
+		c -= 32;
 	if (scancode == 77 || scancode == 75 || scancode == 72 || scancode == 80)
 		handeler_arrow(scancode);
-	else if (c < 127)
+	else if (c && c < 127)
 		putchar(c);
 }
 
@@ -189,7 +199,6 @@ void	scroll(void)
 
 static inline void	putchar(char c)
 {
-	char	buf[10];
 
 	if (c == '\n')
 	{

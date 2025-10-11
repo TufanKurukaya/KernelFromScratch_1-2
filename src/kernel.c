@@ -110,50 +110,38 @@ void	flag_determine(unsigned char scancode)
 	switch (scancode)
 	{
 	case 0x38: // alt
-		key_flag |= 1 << 0;
-		break ;
-	case 0x1D: // ctrl
-		key_flag |= 1 << 1;
-		break ;
-	case 0x2A: // l shift
-		key_flag |= 1 << 2;
-		break ;
-	case 0x36: // r shift
-		key_flag |= 1 << 3;
-		break ;
-	case 0x3A: // capsloc
-		key_flag |= 1 << 4;
-		break ;
-	case 0x1: // esc
-		key_flag |= 1 << 5;
-		break ;
-	case 0x53: // del
-		key_flag |= 1 << 6;
-		break ;
-	// Relase
 	case 0x38 + 0x80:
 		key_flag ^= 1 << 0;
 		break ;
-	case 0x1D + 0x80: // ctrl
+	case 0x1D: // ctrl
+	case 0x1D + 0x80:
 		key_flag ^= 1 << 1;
 		break ;
-	case 0x2A + 0x80: // l shift
+	case 0x2A: // l shift
+	case 0x2A + 0x80:
 		key_flag ^= 1 << 2;
 		break ;
-	case 0x36 + 0x80: // r shift
+	case 0x36: // r shift
+	case 0x36 + 0x80:
 		key_flag ^= 1 << 3;
 		break ;
-	case 0x3A + 0x80:       // capsloc
-		if ((key_flag & 0x90) == 0x90) // 0x90 = 10010000
-			key_flag ^= 0x90; // TO DO bas cek tur sayaci yapilacak
-		else if (!((key_flag & 0x80) == 0x80))
-			key_flag |= 0x80;
+	case 0x3A: // capslock
+		key_flag |= 1 << 4;
 		break ;
-	case 0x1 + 0x80: // esc
+	case 0x1: // esc
+	case 0x1 + 0x80:
 		key_flag ^= 1 << 5;
 		break ;
-	case 0x53 + 0x80: // del
+	case 0x53: // del
+	case 0x53 + 0x80:
 		key_flag ^= 1 << 6;
+		break ;
+	// Relase
+	case 0x3A + 0x80:       // capslock
+		if ((key_flag & 0x90) == 0x90) // 0x90 = 10010000
+			key_flag ^= 0x90; // TO DO bas cek tur sayaci yapilacak
+		else if (!(key_flag & 0x80))
+			key_flag |= 0x80;
 		break ;
 	}
 }

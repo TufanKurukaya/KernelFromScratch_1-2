@@ -3,10 +3,12 @@
 #include "inc/idt.h"
 #include "inc/io.h"
 #include "inc/pic.h"
-#include "inc/vga.h"
 #include "inc/utils.h"
+#include "inc/vga.h"
 #include <stddef.h>
 #include <stdint.h>
+
+#define ALT_CTRL 0x3
 
 void					vga_print(const char *s);
 int						u32_to_dec(uint32_t v, char *out);
@@ -36,11 +38,45 @@ static const char		scancode_table[128] = {
 
 };
 
+static const char		scancode_table_shifted[128] = {
+	0,   27,  '!', '@', '#', '$', '%', '^', '&', '*', '(',  ')', '_',  '+',
+		'\b', '\t',
+
+	'Q', 'W', 'E', 'R', 'T', 'Y', 'U', 'I', 'O', 'P', '{',  '}', '\n', 0,
+
+	'A', 'S', 'D', 'F', 'G', 'H', 'J', 'K', 'L', ':', '\"', '~', 0,    '|', 'Z',
+		 'X',  'C', 'V', 'B', 'N', 'M', '<', '>', '?', 0, '*', 0,
+
+	' ',
+
+	0,
+
+};
+
+void	print_bits(unsigned char bits)
+{
+	for (uint16_t i = 0; i < 8; i++)
+	{
+		if (bits & 0x80)
+			putchar('1');
+		else
+			putchar('0');
+		bits = bits << 1;
+	}
+}
+
 char	scancode_to_char(unsigned char scancode)
 {
 	if (scancode > 127)
 		return (0);
 	return (scancode_table[scancode]);
+}
+
+char	scancode_to_shifted_char(unsigned char scancode)
+{
+	if (scancode > 127)
+		return (0);
+	return (scancode_table_shifted[scancode]);
 }
 
 void	vga_enable_cursor(uint8_t cursor_start, uint8_t cursor_end)
@@ -126,7 +162,6 @@ void	flag_determine(unsigned char scancode)
 		key_flag ^= 1 << 3;
 		break ;
 	case 0x3A: // capslock
-		key_flag |= 1 << 4;
 		break ;
 	case 0x1: // esc
 	case 0x1 + 0x80:
@@ -137,11 +172,8 @@ void	flag_determine(unsigned char scancode)
 		key_flag ^= 1 << 6;
 		break ;
 	// Relase
-	case 0x3A + 0x80:       // capslock
-		if ((key_flag & 0x90) == 0x90) // 0x90 = 10010000
-			key_flag ^= 0x90; // TO DO bas cek tur sayaci yapilacak
-		else if (!(key_flag & 0x80))
-			key_flag |= 0x80;
+	case 0x3A + 0x80: // capslock
+		key_flag ^= 1 << 4;
 		break ;
 	}
 }
@@ -155,12 +187,14 @@ void	keyboard_handler(void)
 	flag_determine(scancode);
 	if (scancode & 0x80)
 	{
-		c = 0;	
+		c = 0;
 		return ;
 	}
-	c = scancode_to_char(scancode);
-	if (((key_flag & 0x10) != 0) ^ ((key_flag & 0x0C) != 0) && ft_isalpha(c))
-		c -= 32;
+	// print_bits(key_flag);
+	if (((key_flag & 0x10) != 0) ^ ((key_flag & 0x0C) != 0))
+		c = scancode_to_shifted_char(scancode);
+	else
+		c = scancode_to_char(scancode);
 	if (scancode == 77 || scancode == 75 || scancode == 72 || scancode == 80)
 		handeler_arrow(scancode);
 	else if (c && c < 127)
@@ -187,7 +221,6 @@ void	scroll(void)
 
 static inline void	putchar(char c)
 {
-
 	if (c == '\n')
 	{
 		cursor_x = 0;

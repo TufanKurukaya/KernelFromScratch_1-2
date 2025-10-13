@@ -18,6 +18,16 @@ static void	gdt_set(int idx, uint32_t base, uint32_t limit, uint8_t access,
 	gdt[idx].base_high = (base >> 24) & 0xFF;
 }
 
+/*
+	ring 0
+	kernel code segment =	0x9A ->	10011010
+	kernel data segment =	0x92 ->	10010010
+
+	ring 3
+	user code segment = 	0xFA ->	11111010
+	user data segment = 	0XF2 ->	11110010
+*/
+
 void	gdt_init(void)
 {
 	gdtp.limit = sizeof(gdt) - 1;

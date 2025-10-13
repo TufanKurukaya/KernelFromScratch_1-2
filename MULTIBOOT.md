@@ -81,3 +81,55 @@ Segment register'ı
 | **FS**   | Ek veri, modern OS’te thread-local    | `0x10` (kernel data) |
 | **GS**   | Ek veri, modern OS’te CPU/thread info | `0x10` (kernel data) |
 
+Access byte 0x9A
+---
+| Bit(ler) | Adı (alan)          | Değer | Anlamı (kod segmenti için)                                                              |
+| -------- | ------------------- | ----: | --------------------------------------------------------------------------------------- |
+| 7        | Present (P)         |     1 | Segment bellek­te mevcut; değilse erişimde #NP hatası.                                  |
+| 6–5      | DPL                 |    00 | Ayrıcalık seviyesi Ring 0.                                                              |
+| 4        | Descriptor Type (S) |     1 | Kod/veri segmenti (sistem segmenti değil).                                              |
+| 3        | Executable (E)      |     1 | Bu bir **kod** segmenti.                                                                |
+| 2        | Conforming (C)      |     0 | **Non-conforming**: Sadece aynı ayrıcalık seviyesinden (CPL = DPL) aktarım yapılabilir. |
+| 1        | Readable (R)        |     1 | Kod okunabilir (yazılamaz).                                                             |
+| 0        | Accessed (A)        |     0 | Henüz erişilmemiş; CPU erişince 1 yapar.                                                |
+
+
+IDT gate “type/attributes” baytı (8 bit)
+---
+| Bit(ler) | Alan            | Anlam                                                                                                                                                                            |
+| -------- | --------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 7        | **P (Present)** | 1 ise giriş geçerli; 0 ise vektör tetiklendiğinde “descriptor not present” hatası. ([wiki.osdev.org][1])                                                                         |
+| 6–5      | **DPL**         | `INT` ile **yazılımsal** tetikleme yapabilmek için gereken en az ayrıcalık seviyesi (CPL ≤ DPL olmalı). Donanım kesmeleri/istisnalar DPL’yi kontrol etmez. ([wiki.osdev.org][1]) |
+| 4        | **S**           | “Storage Segment” biti. **IDT gate’lerinde her zaman 0** (gate = sistem tanımlayıcısı). ([wiki.osdev.org][2])                                                                    |
+| 3–0      | **Type**        | Kapı türünü belirtir (aşağıdaki tam tablo). ([wiki.osdev.org][2])                                                                                                                |
+
+[1]: https://wiki.osdev.org/Interrupt_Descriptor_Table "Interrupt Descriptor Table - OSDev Wiki"
+[2]: https://wiki.osdev.org/Descriptor "Descriptor - OSDev Wiki"
+
+
+
+Gate Type
+---
+| b3..b0 | Hex | Adı/Tanım                      | IDT’de? | Not                                                                                                                          |
+| -----: | --: | ------------------------------ | :-----: | ---------------------------------------------------------------------------------------------------------------------------- |
+|   0000 | 0x0 | Rezerve                        |    ❌    | Kullanılmaz. ([scs.stanford.edu][1])                                                                                         |
+|   0001 | 0x1 | 16-bit **TSS (Available)**     |    ❌    | Yalnız **GDT**’de kullanılır. ([scs.stanford.edu][1])                                                                        |
+|   0010 | 0x2 | **LDT**                        |    ❌    | Yalnız GDT. ([scs.stanford.edu][1])                                                                                          |
+|   0011 | 0x3 | 16-bit **TSS (Busy)**          |    ❌    | Yalnız GDT. ([scs.stanford.edu][1])                                                                                          |
+|   0100 | 0x4 | **Call Gate (16-bit)**         |    ❌    | GDT/LDT’de; **IDT’ye konmaz**. ([wiki.osdev.org][2])                                                                         |
+|   0101 | 0x5 | **Task Gate**                  |    ✅*   | 32-bit korumalı kipte görev geçişi; modern sistemlerde nadir. *x86-64 (IA-32e) kipte **desteklenmez**. ([wiki.osdev.org][3]) |
+|   0110 | 0x6 | **Interrupt Gate (16-bit)**    |    ✅    | 16-bit ISR; girişte **IF=0** yapılır. ([wiki.osdev.org][2])                                                                  |
+|   0111 | 0x7 | **Trap Gate (16-bit)**         |    ✅    | 16-bit ISR; **IF değişmez**. ([wiki.osdev.org][2])                                                                           |
+|   1000 | 0x8 | Rezerve                        |    ❌    | Kullanılmaz. ([scs.stanford.edu][1])                                                                                         |
+|   1001 | 0x9 | 32-bit **TSS (Available)**     |    ❌    | Yalnız GDT; 32-bit TSS seçicisi. ([scs.stanford.edu][4])                                                                     |
+|   1010 | 0xA | Rezerve                        |    ❌    | Kullanılmaz. ([scs.stanford.edu][1])                                                                                         |
+|   1011 | 0xB | 32-bit **TSS (Busy)**          |    ❌    | Yalnız GDT. ([scs.stanford.edu][4])                                                                                          |
+|   1100 | 0xC | **Call Gate (32-bit)**         |    ❌    | GDT/LDT’de; **IDT’ye konmaz**. ([wiki.osdev.org][2])                                                                         |
+|   1101 | 0xD | Rezerve                        |    ❌    | Kullanılmaz. ([scs.stanford.edu][1])                                                                                         |
+|   1110 | 0xE | **Interrupt Gate (32/64-bit)** |    ✅    | 32-bit korumalı kipte 32-bit ISR; **x86-64’te 64-bit ISR**. IF temizlenir. ([wiki.osdev.org][2])                             |
+|   1111 | 0xF | **Trap Gate (32/64-bit)**      |    ✅    | 32-bit korumalı kipte 32-bit ISR; **x86-64’te 64-bit ISR**. IF değişmez. ([wiki.osdev.org][2])                               |
+
+[1]: https://www.scs.stanford.edu/05au-cs240c/lab/i386/s06_03.htm?utm_source=chatgpt.com "6.3 Segment-Level Protection"
+[2]: https://wiki.osdev.org/Descriptor "Descriptor - OSDev Wiki"
+[3]: https://wiki.osdev.org/Interrupt_Descriptor_Table "Interrupt Descriptor Table - OSDev Wiki"
+[4]: https://www.scs.stanford.edu/05au-cs240c/lab/i386/s07_02.htm?utm_source=chatgpt.com "7.2 TSS Descriptor"

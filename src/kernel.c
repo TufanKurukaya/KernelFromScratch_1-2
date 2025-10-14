@@ -10,20 +10,20 @@
 
 #define ALT_CTRL 0x3
 
-void					vga_print(const char *s);
-int						u32_to_dec(uint32_t v, char *out);
-void					keyboard_handler(void);
+void				vga_print(const char *s);
+int					u32_to_dec(uint32_t v, char *out);
+void				keyboard_handler(void);
 
-uint8_t					key_flag = 0;
+uint8_t				key_flag = 0;
 
 static uint16_t *const vga_buffer = (uint16_t *)VGA_MEM;
-static size_t			cursor_x = 0, cursor_y = 0;
-static uint8_t			vga_color = 0x07;
-extern void				isr_irq1_stub(void);
-extern void				default_exception_stub(void);
-static inline void		putchar(char c);
+static size_t		cursor_x = 0, cursor_y = 0;
+static uint8_t		vga_color = 0x07;
+extern void			isr_irq1_stub(void);
+extern void			default_exception_stub(void);
+static inline void	putchar(char c);
 
-static const char		scancode_table[128] = {
+static const char	scancode_table[128] = {
 	0,   27,  '1', '2', '3', '4', '5', '6', '7', '8', '9',  '0', '-',  '=',
 		 '\b', '\t',
 
@@ -38,7 +38,7 @@ static const char		scancode_table[128] = {
 
 };
 
-static const char		scancode_table_shifted[128] = {
+static const char	scancode_table_shifted[128] = {
 	0,   27,  '!', '@', '#', '$', '%', '^', '&', '*', '(',  ')', '_',  '+',
 		'\b', '\t',
 
@@ -65,18 +65,33 @@ void	print_bits(unsigned char bits)
 	}
 }
 
+uint16_t	get_cursor_value(void)
+{
+	return (vga_buffer[cursor_y * VGA_WIDTH + cursor_x]);
+}
+
 char	scancode_to_char(unsigned char scancode)
 {
+	char	tmp;
+
 	if (scancode > 127)
 		return (0);
-	return (scancode_table[scancode]);
+	tmp = scancode_table[scancode];
+	if (key_flag & 0x0C && !ft_isalpha(tmp))
+		return (scancode_table_shifted[scancode]);
+	return (tmp);
 }
 
 char	scancode_to_shifted_char(unsigned char scancode)
 {
+	char	tmp;
+
 	if (scancode > 127)
 		return (0);
-	return (scancode_table_shifted[scancode]);
+	tmp = scancode_table_shifted[scancode];
+	if (key_flag & 0x10 && !ft_isalpha(tmp))
+		return (scancode_table[scancode]);
+	return (tmp);
 }
 
 void	vga_enable_cursor(uint8_t cursor_start, uint8_t cursor_end)
@@ -141,6 +156,7 @@ void	handeler_arrow(char c)
 	}
 	vga_update_hw_cursor();
 }
+
 void	flag_determine(unsigned char scancode)
 {
 	switch (scancode)
@@ -162,6 +178,7 @@ void	flag_determine(unsigned char scancode)
 		key_flag ^= 1 << 3;
 		break ;
 	case 0x3A: // capslock
+		key_flag ^= 1 << 4;
 		break ;
 	case 0x1: // esc
 	case 0x1 + 0x80:
@@ -173,11 +190,27 @@ void	flag_determine(unsigned char scancode)
 		break ;
 	// Relase
 	case 0x3A + 0x80: // capslock
-		key_flag ^= 1 << 4;
 		break ;
 	}
 }
 
+void	shift_right_line(void)
+{
+	size_t	start_pos;
+	size_t	line_start;
+
+	start_pos = cursor_y * VGA_WIDTH + cursor_x;
+	line_start = cursor_y * VGA_WIDTH;
+	for (size_t i = line_start + VGA_WIDTH - 1; i > start_pos; i--)
+	{
+		vga_buffer[i] = vga_buffer[i - 1];
+	}
+	vga_buffer[start_pos] = (uint16_t)0 | (uint16_t)vga_color << 8;
+}
+
+void	shift_left_line(void)
+{
+}
 void	keyboard_handler(void)
 {
 	unsigned char	scancode;
@@ -198,7 +231,11 @@ void	keyboard_handler(void)
 	if (scancode == 77 || scancode == 75 || scancode == 72 || scancode == 80)
 		handeler_arrow(scancode);
 	else if (c && c < 127)
+	{
+		// if ()
+		// 	shift_right_line();
 		putchar(c);
+	}
 }
 
 void	scroll(void)
@@ -213,8 +250,7 @@ void	scroll(void)
 	for (size_t x = 0; x < VGA_WIDTH; x++)
 	{
 		vga_buffer[(VGA_HEIGHT - 1) * VGA_WIDTH
-			+ x] = (uint16_t)' ' | (uint16_t)VGA_COLOR(VGA_LIGHT_GREY,
-				VGA_BLACK) << 8;
+			+ x] = (uint16_t)0 | (uint16_t)vga_color << 8;
 	}
 	cursor_y = VGA_HEIGHT - 1;
 }
@@ -300,19 +336,11 @@ int	u32_to_dec(uint32_t v, char *out)
 	return (n);
 }
 
-static inline uint16_t	read_cs(void)
-{
-	uint16_t	s;
-
-	__asm__("mov %%cs,%0" : "=r"(s));
-	return (s);
-}
-
 void	kernel_main(uint32_t magic)
 {
 	__asm__ __volatile__("cli");
-	vga_clear(VGA_COLOR(VGA_LIGHT_GREY, VGA_BLACK));
 	vga_color = VGA_COLOR(VGA_WHITE, VGA_BLACK);
+	vga_clear(VGA_COLOR(VGA_LIGHT_GREY, VGA_BLACK));
 	if (magic != 0x2BADB002)
 	{
 		vga_print("Bad multiboot magic\n");

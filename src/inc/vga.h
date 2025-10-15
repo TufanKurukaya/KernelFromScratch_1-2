@@ -37,7 +37,8 @@ static inline void	vga_clear(uint8_t color)
 	uint16_t			entry;
 
 	vga = (uint16_t *)VGA_MEM;
-	entry = ((uint16_t)color) << 8 | ' ';
+	entry = 0; 
+	entry = ((uint16_t)color) << 8 | 0;
 	for (size_t i = 0; i < VGA_WIDTH * VGA_HEIGHT; ++i)
 	{
 		vga[i] = entry;

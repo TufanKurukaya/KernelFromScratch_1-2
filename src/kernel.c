@@ -6,6 +6,8 @@
 #include "inc/printf.h"
 #include "inc/utils.h"
 #include "inc/vga.h"
+#include "inc/screen.h"
+
 #include <stddef.h>
 #include <stdint.h>
 #define ALT_CTRL 0x3
@@ -16,11 +18,10 @@ void				keyboard_handler(void);
 
 uint8_t				key_flag = 0;
 
-static uint16_t *const vga_buffer = (uint16_t *)VGA_MEM;
-static size_t		cursor_x = 0, cursor_y = 0;
-static uint8_t		vga_color = 0x07;
+volatile uint16_t *vga_buffer = (volatile uint16_t *)VGA_MEM;
+static size_t	cursor_x = 0, cursor_y = 0;
+static uint8_t	vga_color = 0x07;
 extern void			isr_irq1_stub(void);
-extern void			default_exception_stub(void);
 void				putchar(char c);
 
 static const char	scancode_table[128] = {
@@ -63,6 +64,21 @@ void	print_bits(unsigned char bits)
 			putchar('0');
 		bits = bits << 1;
 	}
+}
+void set_cursor_pos(size_t x ,size_t y)
+{
+	if (x >= VGA_WIDTH) x = VGA_WIDTH - 1;
+	if (y >= VGA_HEIGHT) y = VGA_HEIGHT - 1;
+	cursor_x = x;
+	cursor_y = y;
+}
+
+void get_cursor_pos(size_t *x, size_t *y)
+{
+	if (x)
+		*x = cursor_x;
+	if (y)
+		*y = cursor_y; 
 }
 
 uint16_t	get_cursor_value(void)
@@ -196,35 +212,39 @@ void	flag_determine(unsigned char scancode)
 
 void	shift_right_line(void)
 {
-	size_t	start_pos;
-	size_t	line_start;
-	size_t	i;
+	size_t start_pos = cursor_y * VGA_WIDTH + cursor_x;
+	size_t line_start = cursor_y * VGA_WIDTH;
+	size_t line_end = line_start + VGA_WIDTH - 1;
 
-	start_pos = cursor_y * VGA_WIDTH + cursor_x;
-	line_start = cursor_y * VGA_WIDTH;
-	i = (VGA_WIDTH * VGA_HEIGHT);
-	while (i > start_pos)
-	{
+	if (cursor_x >= VGA_WIDTH)
+		return;
+	if (start_pos > line_end)
+		return;
+
+	for (size_t i = line_end; i > start_pos; --i)
 		vga_buffer[i] = vga_buffer[i - 1];
-		i--;
-	}
-	vga_buffer[start_pos] = (uint16_t)0 | (uint16_t)vga_color << 8;
+
+	vga_buffer[start_pos] = (uint16_t)(vga_color << 8);
 }
 
 void	shift_left_line(void)
 {
-	size_t	start_pos;
-	size_t	line_start;
-	size_t	i;
+	size_t line_start = cursor_y * VGA_WIDTH;
+	size_t line_end = line_start + VGA_WIDTH - 1;
+	size_t start_pos = line_start + cursor_x;
 
-	line_start = cursor_y * VGA_WIDTH;
-	i = line_start + cursor_x;
-	while (i < (VGA_WIDTH * VGA_HEIGHT) - 1)
+	if (cursor_x >= VGA_WIDTH)
+		return;
+	if (start_pos > line_end)
+		return;
+
+	if (start_pos < line_end)
 	{
-		vga_buffer[i] = vga_buffer[i + 1];
-		i++;
+		for (size_t i = start_pos; i < line_end; ++i)
+			vga_buffer[i] = vga_buffer[i + 1];
 	}
-	vga_buffer[i] = (uint16_t)(vga_color << 8 | 0);
+
+	vga_buffer[line_end] = (uint16_t)(vga_color << 8);
 }
 void	keyboard_handler(void)
 {
@@ -239,11 +259,34 @@ void	keyboard_handler(void)
 		c = scancode_to_shifted_char(scancode);
 	else
 		c = scancode_to_char(scancode);
+	if (scancode == 0x3B)
+	{
+		screen_switch(0);
+		vga_update_hw_cursor();
+		return;
+	}
+	else if (scancode == 0x3C)
+	{
+		screen_switch(1);
+		vga_update_hw_cursor();
+		return;
+	}
+	printf("cursor_x: %d, cursor_y: %d\n",cursor_x,cursor_y);
+		
+	if (scancode == 0x53)
+	{
+		if ((vga_buffer[cursor_y * VGA_WIDTH + cursor_x] & 0xFF) != 0)
+			shift_left_line();
+		return;
+	}
+
 	if (scancode == 77 || scancode == 75 || scancode == 72 || scancode == 80)
 		handeler_arrow(scancode);
 	else if (c && c < 127)
 	{
-		if (c != '\n' && c != '\b' && (get_cursor_value() & 0xFF) != 0)
+		if (c != '\n' && c != '\b'
+			&& cursor_x < (VGA_WIDTH - 1)
+			&& (get_cursor_value() & 0xFF) != 0)
 			shift_right_line();
 		putchar(c);
 	}
@@ -280,18 +323,20 @@ void	putchar(char c)
 		if (cursor_x > 0)
 		{
 			cursor_x--;
-			vga_put_entry_at(' ', vga_color, cursor_x, cursor_y);
+			shift_left_line();
 		}
 		else if (cursor_y > 0)
 		{
 			cursor_y--;
-			cursor_x = VGA_WIDTH - 1;
-			while (cursor_x > 0 && (vga_buffer[cursor_y * VGA_WIDTH
-					+ cursor_x] & 0xFF) == ' ')
+			size_t x = 0;
+			while (x < VGA_WIDTH && (vga_buffer[cursor_y * VGA_WIDTH + x] & 0xFF) != 0)
+				x++;
+			cursor_x = (x < VGA_WIDTH) ? x : (VGA_WIDTH - 1);
+			if (cursor_x > 0)
+			{
 				cursor_x--;
-			if (cursor_x < VGA_WIDTH - 1 && (vga_buffer[cursor_y * VGA_WIDTH
-					+ cursor_x] & 0xFF) != ' ')
-				cursor_x++;
+				shift_left_line();
+			}
 		}
 	}
 	else
@@ -367,16 +412,6 @@ void	kernel_main(uint32_t magic)
 	__asm__ __volatile__("sti");
 	vga_enable_cursor(0, 15);
 	vga_update_hw_cursor();
-	// Test advanced newline handling
-	printf("KFS-1 Kernel with Advanced Newline Support!\n");
-	printf("Magic number: 0x%x\n", magic);
-	printf("Testing newline features:\n");
-	printf("Line 1: Normal line\n");
-	printf("Line 2: With\ttabs\there\n");
-	printf("Line 3: Carriage return (test\rOverwritten!\n");
-	printf("Line 4: Very long line that should automatically wrap when it reaches the end of the screen width which is 80 characters");
-	printf("\nLine 5: After automatic wrap\n");
-	printf("Ready for keyboard input...\n");
 	for (;;)
 		__asm__ __volatile__("hlt");
 }

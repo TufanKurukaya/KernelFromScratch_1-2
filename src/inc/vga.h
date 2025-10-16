@@ -44,5 +44,9 @@ static inline void	vga_clear(uint8_t color)
 		vga[i] = entry;
 	}
 }
+void	vga_enable_cursor(uint8_t cursor_start, uint8_t cursor_end);
+void	vga_disable_cursor(void);
+void	vga_update_hw_cursor(void);
+
 
 #endif

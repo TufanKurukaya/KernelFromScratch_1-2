@@ -2,6 +2,16 @@
 extern volatile uint16_t *vga_buffer;
 t_screen screens[3] = {0};
 int current_screen = 0;
+
+void init_screen()
+{
+    for (size_t i = 0; i < 3; i++) {
+        for (size_t j = 0; j < VGA_WIDTH * VGA_HEIGHT; j++) {
+            screens[i].buffer[j] = (uint16_t)0x07 << 8 | ' '; 
+        }
+    }
+}
+
 void screen_switch(int index)
 {
     for (size_t i = 0; i < VGA_WIDTH * VGA_HEIGHT; i++)

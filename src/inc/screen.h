@@ -16,5 +16,6 @@ typedef struct s_screen
 void screen_switch(int index);
 void get_cursor_pos(size_t *x, size_t *y);
 void set_cursor_pos(size_t x ,size_t y);
+void init_screen();
 
 #endif

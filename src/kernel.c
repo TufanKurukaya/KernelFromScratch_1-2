@@ -12,6 +12,8 @@
 #include <stdint.h>
 #define ALT_CTRL 0x3
 
+char command[81];
+
 void				vga_print(const char *s);
 int					u32_to_dec(uint32_t v, char *out);
 void				keyboard_handler(void);
@@ -229,22 +231,18 @@ void	shift_right_line(void)
 
 void	shift_left_line(void)
 {
-	size_t line_start = cursor_y * VGA_WIDTH;
-	size_t line_end = line_start + VGA_WIDTH - 1;
-	size_t start_pos = line_start + cursor_x;
-
-	if (cursor_x >= VGA_WIDTH)
-		return;
-	if (start_pos > line_end)
-		return;
-
-	if (start_pos < line_end)
+	int start_pos = cursor_y * VGA_WIDTH + cursor_x;
+	int end = (1 + cursor_y) * VGA_WIDTH - 1;
+	static int i = 1;
+	if (cursor_x != 0)
+		i = 1;
+	while (start_pos < end && i != -1)
 	{
-		for (size_t i = start_pos; i < line_end; ++i)
-			vga_buffer[i] = vga_buffer[i + 1];
+		vga_buffer[start_pos] = vga_buffer[start_pos + 1];
+		start_pos++;
 	}
-
-	vga_buffer[line_end] = (uint16_t)(vga_color << 8);
+	vga_buffer[(1 + cursor_y) * VGA_WIDTH - 1] = (uint16_t)' ' | (uint16_t)vga_color << 8;
+	i = cursor_x - 1;
 }
 void	keyboard_handler(void)
 {
@@ -298,53 +296,72 @@ void	scroll(void)
 	{
 		for (size_t x = 0; x < VGA_WIDTH; x++)
 		{
-			vga_buffer[(y - 1) * VGA_WIDTH + x] = vga_buffer[y * VGA_WIDTH + x];
+			vga_buffer[((y - 1) * VGA_WIDTH) + x] = vga_buffer[(y * VGA_WIDTH) + x];
 		}
 	}
 	for (size_t x = 0; x < VGA_WIDTH; x++)
 	{
-		vga_buffer[(VGA_HEIGHT - 1) * VGA_WIDTH
-			+ x] = (uint16_t)0 | (uint16_t)vga_color << 8;
+		vga_buffer[(VGA_HEIGHT - 1) * VGA_WIDTH + x] = (uint16_t)' ' | (uint16_t)vga_color << 8;
 	}
 	cursor_y = VGA_HEIGHT - 1;
+}
+
+void	read_cmd()
+{
+	command[0] = '\0';
+	int i = (cursor_y * VGA_WIDTH);
+	int x = 0;
+	char	line_remainder[VGA_WIDTH + 1];
+
+	while (x < VGA_WIDTH)
+	{
+		line_remainder[x] = (char)(vga_buffer[i] & 0xFF);
+		i++;
+		x++;
+	}
+	line_remainder[x] = '\0';
+	trim(line_remainder);
+}
+
+void	process_command()
+{
+	printf(".%s.", command);
+	printf("TODO: Command processing not implemented yet");
+}
+
+void	command_enter()
+{
+	read_cmd();
+	cursor_y++;
+	cursor_x = 0;
+	if (cursor_y == VGA_HEIGHT)
+		scroll();
+	process_command();
+	cursor_y++;
+	cursor_x = 0;
 }
 
 void	putchar(char c)
 {
 	if (c == '\n')
-	{
-		cursor_x = 0;
-		cursor_y++;
-	}
+		command_enter();
 	else if (c == '\t')
 		cursor_x = (cursor_x + 4) & ~(size_t)3;
 	else if (c == '\b')
 	{
-		if (cursor_x > 0)
-		{
-			cursor_x--;
+		if (cursor_x == 79)
+			vga_buffer[cursor_y * VGA_WIDTH + cursor_x] = (uint16_t)' ' | (uint16_t)vga_color << 8;
+		else
 			shift_left_line();
-		}
-		else if (cursor_y > 0)
-		{
-			cursor_y--;
-			size_t x = 0;
-			while (x < VGA_WIDTH && (vga_buffer[cursor_y * VGA_WIDTH + x] & 0xFF) != 0)
-				x++;
-			cursor_x = (x < VGA_WIDTH) ? x : (VGA_WIDTH - 1);
-			if (cursor_x > 0)
-			{
-				cursor_x--;
-				shift_left_line();
-			}
-		}
+		if (cursor_x > 0)
+			cursor_x--;
 	}
 	else
 	{
 		vga_buffer[cursor_y * VGA_WIDTH
 			+ cursor_x] = (uint16_t)c | (uint16_t)vga_color << 8;
 		cursor_x++;
-		if (cursor_x >= VGA_WIDTH)
+		if (cursor_x == VGA_WIDTH)
 		{
 			cursor_x = 0;
 			cursor_y++;
@@ -353,6 +370,7 @@ void	putchar(char c)
 	if (cursor_y >= VGA_HEIGHT)
 		scroll();
 	vga_update_hw_cursor();
+
 }
 
 void	vga_print(const char *s)

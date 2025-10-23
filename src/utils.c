@@ -1,3 +1,5 @@
+extern char command[81];
+
 int	ft_isalpha(int c)
 {
 	if ((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z'))
@@ -30,4 +32,24 @@ int	ft_isprint(int c)
 int	ft_isalnum(int c)
 {
 	return (ft_isalpha(c) || ft_isdigit(c));
+}
+
+void	trim(char *s)
+{
+	int i = 0;
+	int x = 0;
+
+	while (s[i])
+	{
+		if (s[i] > 32 && s[i] <= 126)
+		{
+			command[x++] = s[i];
+			if (s[i + 1] == ' ')
+				command[x++] = ' ';
+		}
+		i++;
+	}
+	if ((x > 0) && command[x - 1] == ' ')
+		command[x - 1] = '\0';
+	command[x] = '\0';
 }

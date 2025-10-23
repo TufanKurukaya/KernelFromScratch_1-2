@@ -1,5 +1,3 @@
-// src/inc/vga.h
-
 #include <stddef.h>
 #include <stdint.h>
 
@@ -37,16 +35,16 @@ static inline void	vga_clear(uint8_t color)
 	uint16_t			entry;
 
 	vga = (uint16_t *)VGA_MEM;
-	entry = 0; 
+	entry = 0;
 	entry = ((uint16_t)color) << 8 | 0;
 	for (size_t i = 0; i < VGA_WIDTH * VGA_HEIGHT; ++i)
 	{
 		vga[i] = entry;
 	}
 }
-void	vga_enable_cursor(uint8_t cursor_start, uint8_t cursor_end);
-void	vga_disable_cursor(void);
-void	vga_update_hw_cursor(void);
-
+void					vga_enable_cursor(uint8_t cursor_start,
+							uint8_t cursor_end);
+void					vga_disable_cursor(void);
+void					vga_update_hw_cursor(void);
 
 #endif

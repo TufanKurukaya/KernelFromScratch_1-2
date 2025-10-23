@@ -1,5 +1,5 @@
 #ifndef UTILS_H
-#define UTILS_H
+# define UTILS_H
 
 int	ft_isalpha(int c);
 int	ft_isascii(int c);

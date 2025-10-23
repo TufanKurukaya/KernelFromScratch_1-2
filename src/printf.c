@@ -76,20 +76,20 @@ static int	check(char form)
 	return (0);
 }
 
-static int	formater(va_list arg, char format)
+static int	formater(va_list *arg, char format)
 {
 	if (format == 'c')
-		return (print_char(va_arg(arg, int)));
+		return (print_char(va_arg(*arg, int)));
 	else if (format == 's')
-		return (print_str(va_arg(arg, char *)));
+		return (print_str(va_arg(*arg, char *)));
 	else if (format == 'p')
-		return (print_hex(va_arg(arg, unsigned long), format, 0));
+		return (print_hex(va_arg(*arg, unsigned long), format, 0));
 	else if (format == 'd' || format == 'i')
-		return (print_int(va_arg(arg, int), 0));
+		return (print_int(va_arg(*arg, int), 0));
 	else if (format == 'u')
-		return (print_int(va_arg(arg, unsigned int), 0));
+		return (print_int(va_arg(*arg, unsigned int), 0));
 	else if (format == 'x' || format == 'X')
-		return (print_hex(va_arg(arg, unsigned int), format, 0));
+		return (print_hex(va_arg(*arg, unsigned int), format, 0));
 	else if (format == '%')
 		return (print_char('%'));
 	else
@@ -110,7 +110,7 @@ int	printf(const char *format, ...)
 	{
 		if (format[i] == '%' && check(format[i + 1]))
 		{
-			temp = formater(arg, format[++i]);
+			temp = formater(&arg, format[++i]);
 			if (temp == -1)
 				return (-1);
 			len += temp;

@@ -12,9 +12,9 @@ ASMFLAGS := -f elf32 #-g -F dwarf
 CFLAGS   := -m32 -ffreestanding -fno-builtin -fno-stack-protector -Os -Wall -Wextra -nostdlib -nodefaultlibs -fno-unwind-tables -g
 LDFLAGS  := -m elf_i386 -T linker.ld -nostdlib -g
 
-SRCS_C   := $(SRC_DIR)/kernel.c $(SRC_DIR)/idt.c $(SRC_DIR)/pic.c $(SRC_DIR)/gdt.c $(SRC_DIR)/utils.c $(SRC_DIR)/printf.c $(SRC_DIR)/screen.c
+SRCS_C   := $(SRC_DIR)/kernel.c $(SRC_DIR)/idt.c $(SRC_DIR)/pic.c $(SRC_DIR)/gdt.c $(SRC_DIR)/utils.c $(SRC_DIR)/printf.c $(SRC_DIR)/screen.c $(SRC_DIR)/keyboard.c
 SRCS_S   := $(SRC_DIR)/assambly/boot.s $(SRC_DIR)/assambly/idt_load.s $(SRC_DIR)/assambly/isr_irq1.s $(SRC_DIR)/assambly/gdt_load.s
-OBJS     := $(BUILD)/boot.o $(BUILD)/kernel.o $(BUILD)/idt.o $(BUILD)/idt_load.o $(BUILD)/pic.o $(BUILD)/isr_irq1.o $(BUILD)/gdt.o $(BUILD)/gdt_load.o $(BUILD)/utils.o $(BUILD)/printf.o $(BUILD)/screen.o
+OBJS     := $(BUILD)/boot.o $(BUILD)/kernel.o $(BUILD)/idt.o $(BUILD)/idt_load.o $(BUILD)/pic.o $(BUILD)/isr_irq1.o $(BUILD)/gdt.o $(BUILD)/gdt_load.o $(BUILD)/utils.o $(BUILD)/printf.o $(BUILD)/screen.o $(BUILD)/keyboard.o
 
 .PHONY: all clean run iso
 

@@ -37,6 +37,7 @@ static f_key_handler_t	f_keys[12] = {
 volatile uint16_t		*vga_buffer = (volatile uint16_t *)VGA_MEM;
 static size_t			cursor_x = 0, cursor_y = 0;
 volatile uint8_t		vga_color = 0x07;
+volatile t_history		history = {0};
 extern void				isr_irq1_stub(void);
 void					putchar(char c);
 
@@ -194,8 +195,6 @@ void	shift_right_line(void)
 	start_pos = cursor_y * VGA_WIDTH + cursor_x;
 	line_start = cursor_y * VGA_WIDTH;
 	line_end = line_start + VGA_WIDTH - 1;
-	if (cursor_x >= VGA_WIDTH)
-		return ;
 	if (start_pos > line_end)
 		return ;
 	for (size_t i = line_end; i > start_pos; --i)
@@ -212,10 +211,6 @@ void	shift_left_line(void)
 	line_start = cursor_y * VGA_WIDTH;
 	line_end = line_start + VGA_WIDTH - 1;
 	start_pos = line_start + cursor_x;
-	if (cursor_x >= VGA_WIDTH)
-		return ;
-	if (start_pos > line_end)
-		return ;
 	if (start_pos < line_end)
 	{
 		for (size_t i = start_pos; i < line_end; ++i)
@@ -367,8 +362,7 @@ void	kernel_main(uint32_t magic)
 				c = scancode_to_char(code);
 				if (c && c < 127)
 				{
-					if (c != '\n' && c != '\b' && cursor_x < (VGA_WIDTH - 1)
-						&& (get_cursor_value() & 0xFF) != 0)
+					if (c != '\n' && c != '\b' && cursor_x < (VGA_WIDTH - 1))
 						shift_right_line();
 					putchar(c);
 				}

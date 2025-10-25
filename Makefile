@@ -52,7 +52,7 @@ clean:
 
 fclean: clean
 	rm -rf $(ISO) $(TARGET) 
-	rm -rf iso/boot/kernel.bin
+	rm -rf iso/boot/$(TARGET)
 
 info:
 	objdump -h $(TARGET)

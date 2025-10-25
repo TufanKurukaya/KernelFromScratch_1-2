@@ -5,6 +5,17 @@ static input_command_t	cmd_queue[CMD_QUEUE_SIZE];
 static int				head = 0, tail = 0;
 static uint8_t			key_state[128];
 repeat_state_t			repeat = {0};
+// Color cycling state for F4
+static uint8_t			fg_index = 0;
+static const uint8_t		fg_cycle[] = {
+	VGA_WHITE, VGA_LIGHT_GREY, VGA_YELLOW, VGA_LIGHT_RED, VGA_LIGHT_GREEN,
+	VGA_LIGHT_CYAN, VGA_LIGHT_BLUE, VGA_LIGHT_MAGENTA, VGA_MAGENTA, VGA_RED,
+	VGA_GREEN, VGA_CYAN, VGA_BLUE, VGA_BROWN, VGA_DARK_GREY
+};
+
+extern volatile uint16_t	*vga_buffer;
+extern volatile uint8_t		vga_color;
+
 
 static int	queue_is_full(void)
 {
@@ -126,6 +137,10 @@ void	f3_handler(void)
 
 void	f4_handler(void)
 {
+	fg_index = (fg_index + 1) % (sizeof(fg_cycle) / sizeof(fg_cycle[0]));
+	vga_color = VGA_COLOR(fg_cycle[fg_index], VGA_BLACK);
+	// screens[current_screen].color = vga_color;
+	draw_color_indicator();
 }
 
 void	f5_handler(void)

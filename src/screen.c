@@ -5,21 +5,48 @@ extern volatile uint8_t		vga_color;
 t_screen					screens[3] = {0};
 int							current_screen = 0;
 
+void		draw_color_indicator(void)
+{
+	size_t	cx, cy;
+	const char *label = "[CLR]";
+	size_t	len = 5;
+	size_t	x = (VGA_WIDTH >= len) ? (VGA_WIDTH - len) : 0;
+
+	get_cursor_pos(&cx, &cy);
+	for (size_t i = 0; i < len; ++i)
+		vga_buffer[0 * VGA_WIDTH + x + i] = ((uint16_t)vga_color << 8) | (uint8_t)label[i];
+	set_cursor_pos(cx, cy);
+	vga_update_hw_cursor();
+}
+
+
 void	screen_put_string(size_t index, const char *str, size_t x, size_t y)
 {
 	size_t	pos;
+	size_t	i;
+	size_t	total;
 
 	if (x > VGA_WIDTH || y > VGA_HEIGHT)
 		return ;
-	pos = y * VGA_HEIGHT + x;
-	for (size_t i = 0; str[i]; i++)
-		screens[index].buffer[pos
-			+ i] = str[i] | (uint16_t)screens[index].color << 8;
+	pos = y * VGA_WIDTH + x;
+	total = VGA_WIDTH * VGA_HEIGHT;
+	i = 0;
+	while (str[i] && (pos + i) < total)
+	{
+		screens[index].buffer[pos + i]
+			= str[i] | (uint16_t)screens[index].color << 8;
+		i++;
+	}
+	pos += i;
+	if (pos >= total)
+		pos = total - 1;
+	screens[index].cursor_pos_y = pos / VGA_WIDTH;
+	screens[index].cursor_pos_x = pos % VGA_WIDTH;
 }
 
 void	init_screen(void)
 {
-	char	str[4] = "[ ]";
+	char	*str = "This Screen [ ]";
 
 	screens[0].color = VGA_COLOR(VGA_WHITE, VGA_BLACK);
 	screens[1].color = VGA_COLOR(VGA_RED, VGA_BLACK);
@@ -30,11 +57,17 @@ void	init_screen(void)
 		{
 			screens[i].buffer[j] = (uint16_t)screens[i].color << 8 | ' ';
 		}
-		str[1] = i + '1';
+		str[13] = i + '1';
 		screen_put_string(i, str, 10, 0);
+		screens[i].cursor_pos_y += 1;
+		screens[i].cursor_pos_x = 0;
+	
 	}
+	// default screen set
 	for (size_t i = 0; i < VGA_HEIGHT * VGA_WIDTH; i++)
 		vga_buffer[i] = screens[0].buffer[i];
+	set_cursor_pos(screens[0].cursor_pos_x,screens[0].cursor_pos_y);
+	draw_color_indicator();
 }
 
 void	screen_switch(int index)
@@ -54,4 +87,5 @@ void	screen_switch(int index)
 	vga_color = screens[index].color;
 	current_screen = index;
 	vga_update_hw_cursor();
+	draw_color_indicator();
 }

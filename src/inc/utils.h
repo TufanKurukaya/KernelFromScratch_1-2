@@ -1,11 +1,13 @@
 #ifndef UTILS_H
 # define UTILS_H
 
-int	ft_isalpha(int c);
-int	ft_isascii(int c);
-int	ft_isdigit(int c);
-int	ft_isprint(int c);
-int ft_isalnum(int c);
+int	    isalpha(int c);
+int	    isascii(int c);
+int	    isdigit(int c);
+int	    isprint(int c);
+int     isalnum(int c);
 void    trim(char *s);
+void	*memmove(void *dst, const void *src, size_t len);
+void	*memcpy(void *dst, const void *src, size_t n);
 
 #endif

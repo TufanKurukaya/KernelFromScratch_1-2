@@ -10,7 +10,6 @@
 #include "inc/vga.h"
 #include <stddef.h>
 #include <stdint.h>
-#define ALT_CTRL 0x3
 
 
 char command[81];
@@ -122,7 +121,7 @@ char	scancode_to_char(uint8_t scancode)
 	c = scancode_table[scancode];
 	shift = is_key_down(0x2A) || is_key_down(0x36);
 	caps = is_key_toggled(0x3A);
-	if (ft_isalpha(c))
+	if (isalpha(c))
 		return ((shift ^ caps) ? c_shitf : c);
 	else
 		return (shift ? c_shitf : c);
@@ -284,8 +283,6 @@ void	command_enter()
 
 void	putchar(char c)
 {
-	size_t	x;
-
 	if (c == '\n')
 		command_enter();
 	else if (c == '\t')
@@ -376,7 +373,7 @@ void	kernel_main(uint32_t magic)
 					handeler_arrow(code);
 					continue ;
 				}
-				if (code == 0x53)
+				else if (code == 0x53)
 				{
 					if ((vga_buffer[cursor_y * VGA_WIDTH
 							+ cursor_x] & 0xFF) != 0)

@@ -48,9 +48,14 @@ void	init_screen(void)
 {
 	char	*str = "This Screen [ ]";
 
-	screens[0].color = VGA_COLOR(VGA_WHITE, VGA_BLACK);
-	screens[1].color = VGA_COLOR(VGA_RED, VGA_BLACK);
-	screens[2].color = VGA_COLOR(VGA_GREEN, VGA_BLACK);
+	// Set default colors per screen (distinct defaults)
+	screens[0].default_color = VGA_COLOR(VGA_WHITE, VGA_BLACK);
+	screens[1].default_color = VGA_COLOR(VGA_RED, VGA_BLACK);
+	screens[2].default_color = VGA_COLOR(VGA_GREEN, VGA_BLACK);
+	// Initialize current colors to default
+	screens[0].color = screens[0].default_color;
+	screens[1].color = screens[1].default_color;
+	screens[2].color = screens[2].default_color;
 	for (size_t i = 0; i < 3; i++)
 	{
 		for (size_t j = 0; j < VGA_WIDTH * VGA_HEIGHT; j++)
@@ -63,9 +68,9 @@ void	init_screen(void)
 		screens[i].cursor_pos_x = 0;
 	
 	}
-	// default screen set
 	for (size_t i = 0; i < VGA_HEIGHT * VGA_WIDTH; i++)
 		vga_buffer[i] = screens[0].buffer[i];
+	vga_color = screens[0].color;
 	set_cursor_pos(screens[0].cursor_pos_x,screens[0].cursor_pos_y);
 	draw_color_indicator();
 }
@@ -85,7 +90,32 @@ void	screen_switch(int index)
 		vga_buffer[i] = screens[index].buffer[i];
 	set_cursor_pos(screens[index].cursor_pos_x, screens[index].cursor_pos_y);
 	vga_color = screens[index].color;
+	screens[index].color = screens[index].default_color;
 	current_screen = index;
+	vga_update_hw_cursor();
+	draw_color_indicator();
+}
+
+void	screen_reset_active(void)
+{
+	uint8_t color = screens[current_screen].default_color;
+	screens[current_screen].color = color;
+	for (size_t j = 0; j < VGA_WIDTH * VGA_HEIGHT; j++)
+		screens[current_screen].buffer[j] = ((uint16_t)color << 8) | ' ';
+	char header[] = "This Screen [ ]";
+	header[13] = (char)('1' + current_screen);
+	screen_put_string(current_screen, header, 10, 0);
+	screens[current_screen].cursor_pos_y = 1;
+	screens[current_screen].cursor_pos_x = 0;
+}
+
+void	screen_apply_active(void)
+{
+	for (size_t i = 0; i < VGA_WIDTH * VGA_HEIGHT; i++)
+		vga_buffer[i] = screens[current_screen].buffer[i];
+	vga_color = screens[current_screen].color;
+	set_cursor_pos(screens[current_screen].cursor_pos_x,
+		screens[current_screen].cursor_pos_y);
 	vga_update_hw_cursor();
 	draw_color_indicator();
 }

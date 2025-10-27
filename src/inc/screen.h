@@ -20,6 +20,7 @@ typedef struct s_screen
 	size_t		cursor_pos_x;
 	size_t		cursor_pos_y;
 	uint8_t		color;
+	uint8_t		default_color;
 	t_history	s_history;
 }               t_screen;
 
@@ -28,6 +29,7 @@ void            get_cursor_pos(size_t *x, size_t *y);
 void            set_cursor_pos(size_t x, size_t y);
 void            init_screen(void);
 void 			draw_color_indicator();
-void			switch_color(int index);
+void            screen_reset_active(void);
+void            screen_apply_active(void);
 
 #endif

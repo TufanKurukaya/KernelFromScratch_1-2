@@ -275,12 +275,13 @@ void	command_enter(void)
 void	putchar(char c)
 {
 	if (c == '\n')
-		command_enter();
-	else if (c == '\t')
-		cursor_x = (cursor_x + 4) & ~(size_t)3;
+	{
+		cursor_x = 0;
+		cursor_y++;
+	}
 	else if (c == '\b')
 	{
-		if (cursor_x == 79)
+		if (cursor_x == VGA_WIDTH - 1)
 			vga_buffer[cursor_y * VGA_WIDTH
 				+ cursor_x] = (uint16_t)' ' | (uint16_t)vga_color << 8;
 		else
@@ -316,7 +317,7 @@ void	vga_print(const char *s)
 	}
 }
 
-void	kernel_main(uint32_t magic)
+void	kernel_main(uint32_t magic, uint32_t addr)
 {
 	input_command_t	cmd;
 	uint8_t			code;
@@ -372,12 +373,21 @@ void	kernel_main(uint32_t magic)
 					continue ;
 				}
 				c = scancode_to_char(code);
-				if (c && c < 127)
+				if (isprint(c) || c == '\b')
 				{
-					if (c != '\n' && c != '\b' && cursor_x < (VGA_WIDTH - 1))
+					if (c != '\b' && cursor_x < (VGA_WIDTH - 1))
 						shift_right_line();
 					putchar(c);
 				}
+				else if (c == '\n')
+				{
+					command_enter();
+					if (cursor_y >= VGA_HEIGHT)
+						scroll();
+					vga_update_hw_cursor();	
+				}
+				else if (c == '\t')
+					navigate_history(72);				
 			}
 		}
 		handle_key_repeat();

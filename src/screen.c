@@ -46,13 +46,12 @@ void	screen_put_string(size_t index, const char *str, size_t x, size_t y)
 
 void	init_screen(void)
 {
-	char	*str = "This Screen [ ]";
+	char	*str = "42        This Screen [ ]";
 
-	// Set default colors per screen (distinct defaults)
 	screens[0].default_color = VGA_COLOR(VGA_WHITE, VGA_BLACK);
 	screens[1].default_color = VGA_COLOR(VGA_RED, VGA_BLACK);
 	screens[2].default_color = VGA_COLOR(VGA_GREEN, VGA_BLACK);
-	// Initialize current colors to default
+
 	screens[0].color = screens[0].default_color;
 	screens[1].color = screens[1].default_color;
 	screens[2].color = screens[2].default_color;
@@ -62,8 +61,8 @@ void	init_screen(void)
 		{
 			screens[i].buffer[j] = (uint16_t)screens[i].color << 8 | ' ';
 		}
-		str[13] = i + '1';
-		screen_put_string(i, str, 10, 0);
+		str[23] = i + '1';
+		screen_put_string(i, str, 0, 0);
 		screens[i].cursor_pos_y += 1;
 		screens[i].cursor_pos_x = 0;
 	
@@ -167,7 +166,7 @@ void	change_cursor_pos()
 			break;
 		i--;
 	}
-	set_cursor_pos((i % 80), y);
+	set_cursor_pos((i % 80) + 1, y);
 }
 
 void	display_history_entry(char *in)

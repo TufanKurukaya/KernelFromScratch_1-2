@@ -6,7 +6,7 @@ int	    isascii(int c);
 int	    isdigit(int c);
 int	    isprint(int c);
 int     isalnum(int c);
-void    trim(char *s);
+void    trim(char *out, char *in);
 void	*memmove(void *dst, const void *src, size_t len);
 void	*memcpy(void *dst, const void *src, size_t n);
 

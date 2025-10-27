@@ -119,3 +119,97 @@ void	screen_apply_active(void)
 	vga_update_hw_cursor();
 	draw_color_indicator();
 }
+
+void	add_history(char *in)
+{
+	int i;
+
+	i = 0;
+	while (i < VGA_WIDTH)
+	{
+		history.cmds[history.index][i] = in[i];
+		i++;
+	}
+	history.cmds[history.index][i] = '\0';
+	history.index++;
+
+	if (history.index == HISTORY_MAX)
+		history.index = 0;
+}
+
+void	add_history_entry()
+{
+	static int	i = 0;
+	history.cursor = history.index;
+	history.edit_backup[0] = '\0';
+
+	if (history.index == HISTORY_MAX - 1)
+		history.cmds[0][0] = '\0';
+	else
+		history.cmds[history.index + 1][0] = '\0';
+	while (i < HISTORY_MAX)
+	{
+		history.cmds[i][0] = '\0';
+		i++;
+	}
+}
+
+void	change_cursor_pos()
+{
+	size_t	y = 0;
+	get_cursor_pos((size_t *)"", &y);
+	int	i = ((y + 1) * VGA_WIDTH);
+	int x = (y * VGA_WIDTH);
+
+	while (i != x)
+	{
+		if ((vga_buffer[i] & 0xFF) != ' ')
+			break;
+		i--;
+	}
+	set_cursor_pos((i % 80), y);
+}
+
+void	display_history_entry(char *in)
+{
+	size_t	y = 0;
+	int		x = 0;
+	get_cursor_pos((size_t *)"", &y);
+	int 	i = (y * VGA_WIDTH);
+
+	while (x < VGA_WIDTH)
+	{
+		vga_buffer[i] = (uint16_t)(in[x] ? in[x] : ' ') | ((uint16_t)vga_color << 8);
+		i++;
+		x++;
+	}
+	change_cursor_pos();
+}
+//set
+void	navigate_history(char direction)
+{
+	if (direction == 72) // U
+	{
+		if (history.cmds[history.cursor][0] == '\0')
+            return;
+		if (history.edit_backup[0] == '\0')
+			read_vga((char *)history.edit_backup);
+		display_history_entry((char *)history.cmds[history.cursor]);
+		history.cursor = (history.cursor == 0) ? HISTORY_MAX - 1 : history.cursor - 1;
+	}
+	else
+	{
+		int next_cursor = (history.cursor + 1) % HISTORY_MAX;
+
+		if (next_cursor == history.index)
+		{
+			if (history.edit_backup[0] == '\0')
+				return;
+			display_history_entry((char *)history.edit_backup);
+			history.edit_backup[0] = '\0';
+			return;
+		}
+		history.cursor = next_cursor;
+		display_history_entry((char *)history.cmds[history.cursor]);
+	}
+}

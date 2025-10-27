@@ -1,4 +1,3 @@
-extern char command[81];
 
 int	ft_isalpha(int c)
 {
@@ -33,22 +32,22 @@ int	ft_isalnum(int c)
 	return (ft_isalpha(c) || ft_isdigit(c));
 }
 
-void	trim(char *s)
+void	trim(char *out, char *in)
 {
 	int i = 0;
 	int x = 0;
 
-	while (s[i])
+	while (in[i])
 	{
-		if (s[i] > 32 && s[i] <= 126)
+		if (in[i] > 32 && in[i] <= 126)
 		{
-			command[x++] = s[i];
-			if (s[i + 1] == ' ')
-				command[x++] = ' ';
+			out[x++] = in[i];
+			if (in[i + 1] == ' ')
+				out[x++] = ' ';
 		}
 		i++;
 	}
-	if ((x > 0) && command[x - 1] == ' ')
-		command[x - 1] = '\0';
-	command[x] = '\0';
+	if ((x > 0) && out[x - 1] == ' ')
+		out[x - 1] = '\0';
+	out[x] = '\0';
 }

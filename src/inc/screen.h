@@ -9,9 +9,10 @@
 
 typedef struct s_history
 {
-	char    cmds[HISTORY_MAX][VGA_WIDTH];
+	char    cmds[HISTORY_MAX][VGA_WIDTH + 1];
 	int     index;
-	char    edit_backup[VGA_WIDTH];
+	char    edit_backup[VGA_WIDTH + 1];
+	int		cursor;
 }               t_history;
 
 typedef struct s_screen
@@ -23,9 +24,15 @@ typedef struct s_screen
 	t_history	s_history;
 }               t_screen;
 
+extern volatile t_history history;
+
 void            screen_switch(int index);
 void            get_cursor_pos(size_t *x, size_t *y);
 void            set_cursor_pos(size_t x, size_t y);
 void            init_screen(void);
+void			add_history(char *in);
+void			add_history_entry();
+void			navigate_history(char direction);
+void			read_vga(char *out);
 
 #endif

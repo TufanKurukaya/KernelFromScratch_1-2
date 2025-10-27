@@ -12,9 +12,6 @@
 #include <stdint.h>
 #define ALT_CTRL 0x3
 
-
-char command[81];
-
 typedef void			(*f_key_handler_t)(void);
 
 
@@ -39,7 +36,8 @@ static f_key_handler_t	f_keys[12] = {
 };
 
 volatile uint16_t		*vga_buffer = (volatile uint16_t *)VGA_MEM;
-static size_t			cursor_x = 0, cursor_y = 0;
+static size_t			cursor_x = 0;
+size_t					cursor_y = 0;
 volatile uint8_t		vga_color = 0x07;
 volatile t_history		history = {0};
 extern void				isr_irq1_stub(void);
@@ -167,28 +165,30 @@ static inline void	vga_put_entry_at(char c, uint8_t color, size_t x, size_t y)
 }
 
 void	handeler_arrow(char c)
-// TODO: Bukadar serbest harekete icin verilmeyecek
 {
-	if (c == 77)
+	switch (c)
 	{
-		if (cursor_x < VGA_WIDTH - 1)
-			cursor_x++;
-	}
-	else if (c == 75)
-	{
-		if (cursor_x > 0)
-			cursor_x--;
-	}
-	else if (c == 72)
-	{
-		// history
-	}
-	else
-	{
-		// history
+		case 77:
+			if (cursor_x < VGA_WIDTH - 1)
+				cursor_x++;
+			break;
+		case 75:
+			if (cursor_x > 0)
+				cursor_x--;
+			break;
+		default:
+			navigate_history(c);
+			break;
 	}
 	vga_update_hw_cursor();
 }
+	/* if ((c == 77 && cursor_x < VGA_WIDTH - 1) ||
+    			(c == 75 && cursor_x > 0))
+		(c == 77) ? cursor_x++ : cursor_x--;
+
+	else if (c == 72 || c == 80)
+		navigate_history(c);
+	vga_update_hw_cursor(); */
 
 void	shift_right_line(void)
 {
@@ -208,7 +208,6 @@ void	shift_right_line(void)
 
 void	shift_left_line(void)
 {
-
 	int start_pos = cursor_y * VGA_WIDTH + cursor_x;
 	int end = (1 + cursor_y) * VGA_WIDTH - 1;
 	static int i = 1;
@@ -247,45 +246,45 @@ void	scroll(void)
 	cursor_y = VGA_HEIGHT - 1;
 }
 
-void	read_cmd()
+void	read_vga(char *out)
 {
-	command[0] = '\0';
+	out[0] = '\0';
 	int i = (cursor_y * VGA_WIDTH);
 	int x = 0;
-	char	line_remainder[VGA_WIDTH + 1];
 
 	while (x < VGA_WIDTH)
 	{
-		line_remainder[x] = (char)(vga_buffer[i] & 0xFF);
+		out[x] = (char)(vga_buffer[i] & 0xFF);
 		i++;
 		x++;
 	}
-	line_remainder[x] = '\0';
-	trim(line_remainder);
+	out[x] = '\0';
 }
 
-void	process_command()
+void	process_command(char *vga_buf)
 {
-	printf(".%s.", command);
+	char	command[VGA_WIDTH + 1];
+	trim(command, vga_buf);
 	printf("TODO: Command processing not implemented yet");
 }
 
 void	command_enter()
 {
-	read_cmd();
+	char	vga_buf[VGA_WIDTH + 1];
+	add_history_entry();
+	read_vga(vga_buf);
+	add_history(vga_buf);
 	cursor_y++;
 	cursor_x = 0;
 	if (cursor_y == VGA_HEIGHT)
 		scroll();
-	process_command();
+	process_command(vga_buf);
 	cursor_y++;
 	cursor_x = 0;
 }
 
 void	putchar(char c)
 {
-	size_t	x;
-
 	if (c == '\n')
 		command_enter();
 	else if (c == '\t')

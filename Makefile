@@ -4,10 +4,9 @@ ISO      := kfs.iso
 BUILD    := build
 SRC_DIR  := src
 ASM      := nasm
-CC       := x86_64-elf-gcc
-LD       := x86_64-elf-ld
-STRIP    := x86_64-elf-objcopy
-
+CC       := gcc
+LD       := ld
+STRIP    := objcopy
 
 ASMFLAGS := -f elf32 #-g -F dwarf
 CFLAGS   := -m32 -ffreestanding -fno-builtin -fno-stack-protector -Os -Wall -Wextra -nostdlib -nodefaultlibs -fno-unwind-tables -g
@@ -37,7 +36,7 @@ $(TARGET): $(OBJS) linker.ld
 iso: $(TARGET)
 	mkdir -p iso/boot/grub
 	cp $(TARGET) iso/boot/
-	i686-elf-grub-mkrescue --locales="" --fonts="" --themes="" \
+	grub-mkrescue --locales="" --fonts="" --themes="" \
 		--modules="multiboot iso9660 normal" \
 		-o $(ISO) iso
 		
@@ -53,7 +52,7 @@ clean:
 
 fclean: clean
 	rm -rf $(ISO) $(TARGET) 
-	rm -rf iso/boot/kernel.bin
+	rm -rf iso/boot/$(TARGET)
 
 info:
 	objdump -h $(TARGET)

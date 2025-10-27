@@ -4,7 +4,6 @@ extern volatile uint16_t	*vga_buffer;
 extern volatile uint8_t		vga_color;
 t_screen					screens[3] = {0};
 int							current_screen = 0;
-extern size_t				cursor_y;
 
 void	screen_put_string(size_t index, const char *str, size_t x, size_t y)
 {
@@ -91,10 +90,28 @@ void	add_history_entry()
 	}
 }
 
+void	change_cursor_pos()
+{
+	size_t	y = 0;
+	get_cursor_pos((size_t *)"", &y);
+	int	i = ((y + 1) * VGA_WIDTH);
+	int x = (y * VGA_WIDTH);
+
+	while (i != x)
+	{
+		if ((vga_buffer[i] & 0xFF) != ' ')
+			break;
+		i--;
+	}
+	set_cursor_pos((i % 80), y);
+}
+
 void	display_history_entry(char *in)
 {
-	int i = (cursor_y * VGA_WIDTH);
-	int	x = 0;
+	size_t	y = 0;
+	int		x = 0;
+	get_cursor_pos((size_t *)"", &y);
+	int 	i = (y * VGA_WIDTH);
 
 	while (x < VGA_WIDTH)
 	{
@@ -102,8 +119,9 @@ void	display_history_entry(char *in)
 		i++;
 		x++;
 	}
+	change_cursor_pos();
 }
-
+//set
 void	navigate_history(char direction)
 {
 	if (direction == 72) // U

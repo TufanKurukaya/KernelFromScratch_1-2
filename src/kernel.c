@@ -36,10 +36,9 @@ static f_key_handler_t	f_keys[12] = {
 };
 
 volatile uint16_t		*vga_buffer = (volatile uint16_t *)VGA_MEM;
-static size_t			cursor_x = 0;
-size_t					cursor_y = 0;
+static size_t			cursor_x = 0, cursor_y = 0;
 volatile uint8_t		vga_color = 0x07;
-volatile t_history		history = {0};
+volatile t_history		history = {.edit_backup[0] = '\0', .index = 0, .cursor = HISTORY_MAX - 1};
 extern void				isr_irq1_stub(void);
 void					putchar(char c);
 

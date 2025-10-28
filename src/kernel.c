@@ -23,7 +23,8 @@ static f_key_handler_t	f_keys[12] = {f1_handler, f2_handler, f3_handler,
 volatile uint16_t		*vga_buffer = (volatile uint16_t *)VGA_MEM;
 static size_t			cursor_x = 0, cursor_y = 0;
 volatile uint8_t		vga_color = 0x07;
-volatile t_history		history = {.edit_backup[0] = '\0', .index = 0, .cursor = HISTORY_MAX - 1};
+volatile t_history		history = {.edit_backup[0] = '\0', .index = 0,
+			.cursor = HISTORY_MAX - 1};
 extern void				isr_irq1_stub(void);
 void					putchar(char c);
 
@@ -68,6 +69,7 @@ void	print_bits(unsigned char bits)
 		bits = bits << 1;
 	}
 }
+
 void	set_cursor_pos(size_t x, size_t y)
 {
 	if (x >= VGA_WIDTH)
@@ -155,24 +157,24 @@ void	handeler_arrow(char c)
 		case 77:
 			if (cursor_x < VGA_WIDTH - 1)
 				cursor_x++;
-			break;
+			break ;
 		case 75:
 			if (cursor_x > 0)
 				cursor_x--;
-			break;
+			break ;
 		default:
 			navigate_history(c);
-			break;
+			break ;
 	}
 	vga_update_hw_cursor();
 }
-	/* if ((c == 77 && cursor_x < VGA_WIDTH - 1) ||
-    			(c == 75 && cursor_x > 0))
-		(c == 77) ? cursor_x++ : cursor_x--;
+/* if ((c == 77 && cursor_x < VGA_WIDTH - 1) ||
+			(c == 75 && cursor_x > 0))
+	(c == 77) ? cursor_x++ : cursor_x--;
 
-	else if (c == 72 || c == 80)
-		navigate_history(c);
-	vga_update_hw_cursor(); */
+else if (c == 72 || c == 80)
+	navigate_history(c);
+vga_update_hw_cursor(); */
 
 void	shift_right_line(void)
 {
@@ -237,10 +239,12 @@ void	scroll(void)
 
 void	read_vga(char *out)
 {
-	out[0] = '\0';
-	int i = (cursor_y * VGA_WIDTH);
-	int x = 0;
+	int	i;
+	int	x;
 
+	out[0] = '\0';
+	i = (cursor_y * VGA_WIDTH);
+	x = 0;
 	while (x < VGA_WIDTH)
 	{
 		out[x] = (char)(vga_buffer[i] & 0xFF);
@@ -253,6 +257,7 @@ void	read_vga(char *out)
 void	process_command(char *vga_buf)
 {
 	char	command[VGA_WIDTH + 1];
+
 	trim(command, vga_buf);
 	printf("TODO: Command processing not implemented yet");
 }
@@ -260,6 +265,7 @@ void	process_command(char *vga_buf)
 void	command_enter(void)
 {
 	char	vga_buf[VGA_WIDTH + 1];
+
 	add_history_entry();
 	read_vga(vga_buf);
 	add_history(vga_buf);
@@ -282,8 +288,7 @@ void	putchar(char c)
 	else if (c == '\b')
 	{
 		if (cursor_x == VGA_WIDTH - 1)
-			vga_buffer[cursor_y * VGA_WIDTH
-				+ cursor_x] = (uint16_t)' ' | (uint16_t)vga_color << 8;
+			vga_buffer[cursor_y * VGA_WIDTH + cursor_x] = ' ' | (uint16_t)vga_color << 8;
 		else
 			shift_left_line();
 		if (cursor_x > 0)
@@ -351,7 +356,7 @@ void	kernel_main(uint32_t magic, uint32_t addr)
 			if (cmd.type == 0)
 			{
 				code = cmd.scancode;
-				if (code >= 0x3B && code <= 0x44) // F1-F10
+				if (code >= 0x3B && code <= 0x44)
 				{
 					idx = code - 0x3B;
 					if (f_keys[idx] != NULL)
@@ -384,10 +389,10 @@ void	kernel_main(uint32_t magic, uint32_t addr)
 					command_enter();
 					if (cursor_y >= VGA_HEIGHT)
 						scroll();
-					vga_update_hw_cursor();	
 				}
 				else if (c == '\t')
-					navigate_history(72);				
+					navigate_history(72);
+				vga_update_hw_cursor();
 			}
 		}
 		handle_key_repeat();

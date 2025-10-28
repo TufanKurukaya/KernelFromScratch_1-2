@@ -9,7 +9,7 @@
 
 #define ICW1_INIT 0x10
 #define ICW1_ICW4 0x01
-#define ICW4_8086 0x01
+#define ICW4_8086 0x03 // + AEOI
 
 void	pic_remap(int offset1, int offset2)
 {

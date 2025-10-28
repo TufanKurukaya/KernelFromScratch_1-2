@@ -32,7 +32,7 @@ void            get_cursor_pos(size_t *x, size_t *y);
 void            set_cursor_pos(size_t x, size_t y);
 void            init_screen(void);
 void 			draw_color_indicator();
-void            screen_reset_active(void);
+void            screen_reset_active(int index);
 void            screen_apply_active(void);
 void			add_history(char *in);
 void			add_history_entry();

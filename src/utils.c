@@ -1,5 +1,5 @@
-#include <stdint.h>
 #include <stddef.h>
+#include <stdint.h>
 
 int	isalpha(int c)
 {
@@ -36,9 +36,11 @@ int	isalnum(int c)
 
 void	trim(char *out, char *in)
 {
-	int i = 0;
-	int x = 0;
+	int	i;
+	int	x;
 
+	i = 0;
+	x = 0;
 	while (in[i])
 	{
 		if (in[i] > 32 && in[i] <= 126)

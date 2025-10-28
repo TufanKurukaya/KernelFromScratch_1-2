@@ -142,7 +142,7 @@ void	f4_handler(void)
 
 void	f5_handler(void)
 {
-	screen_reset_active();
+	screen_reset_active(-1);
 	screen_apply_active();
 }
 

@@ -1,9 +1,11 @@
 #include "inc/printf.h"
-
+#include "inc/utils.h"
 void		putchar(char c);
+
 int	print_char(int c)
 {
-	putchar(c);
+	if (isprint(c) || c == '\n')
+		putchar(c);
 	return (1);
 }
 

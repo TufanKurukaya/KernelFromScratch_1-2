@@ -93,3 +93,15 @@ void	*memmove(void *dst, const void *src, size_t len)
 		return (memcpy(dst, src, len));
 	return ((void *)d);
 }
+
+void	*memset(void *s, int c, size_t n)
+{
+	unsigned char	*p;
+
+	p = s;
+	while (n-- > 0)
+	{
+		*p++ = (unsigned char)c;
+	}
+	return (s);
+}

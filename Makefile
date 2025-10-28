@@ -7,7 +7,7 @@ ASM      := nasm
 CC       := gcc
 LD       := ld
 STRIP    := objcopy
-
+CON_NAME := build_container
 ASMFLAGS := -f elf32 #-g -F dwarf
 CFLAGS   := -m32 -ffreestanding -fno-builtin -fno-stack-protector -Os -Wall -Wextra -nostdlib -nodefaultlibs -fno-unwind-tables -g
 LDFLAGS  := -m elf_i386 -T linker.ld -nostdlib -g
@@ -58,4 +58,7 @@ info:
 	objdump -h $(TARGET)
 	readelf -l $(TARGET)
 
+docker:
+	docker build -t $(CON_NAME) $$(pwd)
+	docker run --rm -v $$(pwd):/src $(CON_NAME) make iso
 re: fclean all

@@ -322,7 +322,7 @@ void	vga_print(const char *s)
 	}
 }
 
-void	kernel_main(uint32_t magic, uint32_t addr)
+void	kernel_main(uint32_t magic)
 {
 	input_command_t	cmd;
 	uint8_t			code;

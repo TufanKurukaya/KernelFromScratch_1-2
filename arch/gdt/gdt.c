@@ -1,6 +1,6 @@
 // src/gdt.c
-#include "inc/gdt.h"
-#include "inc/utils.h"
+#include "gdt.h"
+#include "../../lib/utils.h"
 
 static struct gdt_entry	gdt[3];
 struct gdt_ptr			gdtp;

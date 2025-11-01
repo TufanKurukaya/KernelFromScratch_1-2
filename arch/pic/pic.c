@@ -1,6 +1,6 @@
 // src/pic.c
-#include "inc/io.h"
-#include "inc/pic.h"
+#include "../boot/io.h"
+#include "pic.h"
 
 #define PIC1_CMD 0x20
 #define PIC1_DATA 0x21

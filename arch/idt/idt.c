@@ -1,5 +1,5 @@
 // src/idt.c
-#include "inc/idt.h"
+#include "idt.h"
 
 static struct idt_entry	idt[256];
 struct idt_ptr			idtp;

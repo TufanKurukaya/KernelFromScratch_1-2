@@ -22,6 +22,8 @@ typedef struct
 	uint8_t			active;
 }					repeat_state_t;
 
+extern repeat_state_t	repeat;
+
 void				keyboard_isr(uint8_t scancode);
 int					input_poll(input_command_t *out);
 void				update_key_state(input_command_t *cmd);

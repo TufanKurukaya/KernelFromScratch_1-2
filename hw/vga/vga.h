@@ -24,6 +24,9 @@
 # define VGA_WIDTH 80
 # define VGA_HEIGHT 25
 
+extern volatile uint16_t *vga_buffer;
+extern volatile uint8_t vga_color;
+
 static inline uint8_t	VGA_COLOR(uint8_t fg, uint8_t bg)
 {
 	return (fg | (bg << 4));
@@ -42,6 +45,7 @@ static inline void	vga_clear(uint8_t color)
 		vga[i] = entry;
 	}
 }
+
 void					vga_enable_cursor(uint8_t cursor_start,
 							uint8_t cursor_end);
 void					vga_disable_cursor(void);

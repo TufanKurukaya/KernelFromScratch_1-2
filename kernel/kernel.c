@@ -1,32 +1,27 @@
 // src/kernel.c
-#include "inc/gdt.h"
-#include "inc/idt.h"
-#include "inc/io.h"
-#include "inc/keyboard.h"
-#include "inc/pic.h"
-#include "inc/printf.h"
-#include "inc/screen.h"
-#include "inc/utils.h"
-#include "inc/vga.h"
+#include "../arch/gdt/gdt.h"
+#include "../arch/idt/idt.h"
+#include "../arch/pic/pic.h"
+#include "../arch/boot/io.h"
+#include "../hw/keyboard/keyboard.h"
+#include "../lib/printf.h"
+#include "../hw/screen/screen.h"
+#include "../lib/utils.h"
+#include "../hw/vga/vga.h"
 #include <stddef.h>
 #include <stdint.h>
+#include "kernel.h"
 
+//void					vga_print(const char *s);
+//extern void				isr_irq1_stub(void);
+//extern repeat_state_t	repeat;
+//void					keyboard_handler(void);
 typedef void			(*f_key_handler_t)(void);
-void					vga_print(const char *s);
-void					keyboard_handler(void);
-extern repeat_state_t	repeat;
 
 static f_key_handler_t	f_keys[12] = {f1_handler, f2_handler, f3_handler,
 		f4_handler, f5_handler, f6_handler, f7_handler, f8_handler, f9_handler,
 		f10_handler, NULL, NULL};
 
-volatile uint16_t		*vga_buffer = (volatile uint16_t *)VGA_MEM;
-static size_t			cursor_x = 0, cursor_y = 0;
-volatile uint8_t		vga_color = 0x07;
-volatile t_history		history = {.edit_backup[0] = '\0', .index = 0,
-			.cursor = HISTORY_MAX - 1};
-extern void				isr_irq1_stub(void);
-void					putchar(char c);
 
 static const char		scancode_table[128] = {
 	0,   27,  '1', '2', '3', '4', '5', '6', '7', '8', '9',  '0', '-',  '=',
@@ -70,29 +65,6 @@ void	print_bits(unsigned char bits)
 	}
 }
 
-void	set_cursor_pos(size_t x, size_t y)
-{
-	if (x >= VGA_WIDTH)
-		x = VGA_WIDTH - 1;
-	if (y >= VGA_HEIGHT)
-		y = VGA_HEIGHT - 1;
-	cursor_x = x;
-	cursor_y = y;
-}
-
-void	get_cursor_pos(size_t *x, size_t *y)
-{
-	if (x)
-		*x = cursor_x;
-	if (y)
-		*y = cursor_y;
-}
-
-uint16_t	get_cursor_value(void)
-{
-	return (vga_buffer[cursor_y * VGA_WIDTH + cursor_x]);
-}
-
 char	scancode_to_char(uint8_t scancode)
 {
 	char	c_shitf;
@@ -110,44 +82,6 @@ char	scancode_to_char(uint8_t scancode)
 		return ((shift ^ caps) ? c_shitf : c);
 	else
 		return (shift ? c_shitf : c);
-}
-
-void	vga_enable_cursor(uint8_t cursor_start, uint8_t cursor_end)
-{
-	uint8_t	cur_start;
-	uint8_t	cur_end;
-
-	outb(0x3D4, 0x0A);
-	cur_start = inb(0x3D5);
-	outb(0x3D5, (cur_start & 0xC0) | (cursor_start & 0x1F));
-	outb(0x3D4, 0x0B);
-	cur_end = inb(0x3D5);
-	outb(0x3D5, (cur_end & 0xE0) | (cursor_end & 0x1F));
-}
-
-void	vga_disable_cursor(void)
-{
-	outb(0x3D4, 0x0A);
-	outb(0x3D5, 0x20);
-}
-
-void	vga_update_hw_cursor(void)
-{
-	uint16_t	pos;
-
-	pos = (uint16_t)(cursor_y * VGA_WIDTH + cursor_x);
-	outb(0x3D4, 0x0F);
-	outb(0x3D5, (uint8_t)(pos & 0xFF)); // low
-	outb(0x3D4, 0x0E);
-	outb(0x3D5, (uint8_t)((pos >> 8) & 0xFF)); // high
-}
-
-static inline void	vga_put_entry_at(char c, uint8_t color, size_t x, size_t y)
-{
-	volatile uint16_t	*vga;
-
-	vga = (uint16_t *)VGA_MEM;
-	vga[y * VGA_WIDTH + x] = ((uint16_t)color << 8) | (uint8_t)c;
 }
 
 void	handeler_arrow(char c)
@@ -235,23 +169,6 @@ void	scroll(void)
 			+ x] = (uint16_t)' ' | (uint16_t)vga_color << 8;
 	}
 	cursor_y = VGA_HEIGHT - 1;
-}
-
-void	read_vga(char *out)
-{
-	int	i;
-	int	x;
-
-	out[0] = '\0';
-	i = (cursor_y * VGA_WIDTH);
-	x = 0;
-	while (x < VGA_WIDTH)
-	{
-		out[x] = (char)(vga_buffer[i] & 0xFF);
-		i++;
-		x++;
-	}
-	out[x] = '\0';
 }
 
 void	process_command(char *vga_buf)

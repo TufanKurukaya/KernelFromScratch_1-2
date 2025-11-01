@@ -1,5 +1,5 @@
-#include "inc/printf.h"
-#include "inc/utils.h"
+#include "printf.h"
+#include "utils.h"
 void		putchar(char c);
 
 int	print_char(int c)

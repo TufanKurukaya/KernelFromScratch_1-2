@@ -1,9 +1,35 @@
-#include "inc/screen.h"
+#include "screen.h"
 
 extern volatile uint16_t	*vga_buffer;
 extern volatile uint8_t		vga_color;
 t_screen					screens[3] = {0};
 int							current_screen = 0;
+size_t						cursor_x = 0, cursor_y = 0;
+volatile t_history			history = {.edit_backup[0] = '\0', .index = 0,
+			.cursor = HISTORY_MAX - 1};
+
+void	set_cursor_pos(size_t x, size_t y)
+{
+	if (x >= VGA_WIDTH)
+		x = VGA_WIDTH - 1;
+	if (y >= VGA_HEIGHT)
+		y = VGA_HEIGHT - 1;
+	cursor_x = x;
+	cursor_y = y;
+}
+
+void	get_cursor_pos(size_t *x, size_t *y)
+{
+	if (x)
+		*x = cursor_x;
+	if (y)
+		*y = cursor_y;
+}
+
+uint16_t	get_cursor_value(void)
+{
+	return (vga_buffer[cursor_y * VGA_WIDTH + cursor_x]);
+}
 
 void	draw_color_indicator(void)
 {

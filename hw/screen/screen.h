@@ -1,11 +1,13 @@
 #ifndef SCREEN_H
 # define SCREEN_H
 
-# include "vga.h"
+# include "../vga/vga.h"
 # include <stddef.h>
 # include <stdint.h>
 
 # define HISTORY_MAX 32
+extern size_t cursor_x;
+extern size_t cursor_y;
 
 typedef struct s_history
 {
@@ -30,6 +32,7 @@ extern volatile t_history history;
 void            screen_switch(int index);
 void            get_cursor_pos(size_t *x, size_t *y);
 void            set_cursor_pos(size_t x, size_t y);
+uint16_t		get_cursor_value(void);
 void            init_screen(void);
 void 			draw_color_indicator();
 void            screen_reset_active(int index);

@@ -1,5 +1,5 @@
-#include "inc/keyboard.h"
-#include "inc/screen.h"
+#include "keyboard.h"
+#include "../screen/screen.h"
 
 static input_command_t		cmd_queue[CMD_QUEUE_SIZE];
 static int					head = 0, tail = 0;

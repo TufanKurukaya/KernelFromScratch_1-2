@@ -1,16 +1,10 @@
 #include "keyboard.h"
 #include "../screen/screen.h"
-
+#include "../../arch/boot/io.h"
 static input_command_t		cmd_queue[CMD_QUEUE_SIZE];
 static int					head = 0, tail = 0;
 static uint8_t				key_state[128];
 repeat_state_t				repeat = {0};
-
-static uint8_t				fg_index = 0;
-static const uint8_t		fg_cycle[] = {VGA_WHITE, VGA_LIGHT_GREY, VGA_YELLOW,
-			VGA_LIGHT_RED, VGA_LIGHT_GREEN, VGA_LIGHT_CYAN, VGA_LIGHT_BLUE,
-			VGA_LIGHT_MAGENTA, VGA_MAGENTA, VGA_RED, VGA_GREEN, VGA_CYAN,
-			VGA_BLUE, VGA_BROWN, VGA_DARK_GREY};
 
 extern volatile uint16_t	*vga_buffer;
 extern volatile uint8_t		vga_color;
@@ -49,6 +43,14 @@ void	keyboard_isr(unsigned char scancode)
 	cmd.scancode = scancode & 0x7F;
 	cmd.type = (scancode & 0x80) ? 1 : 0;
 	enqueue(cmd);
+}
+
+void	keyboard_handler(void)
+{
+	uint8_t	scancode;
+
+	scancode = inb(0x60);
+	keyboard_isr(scancode);
 }
 
 int	input_poll(input_command_t *out)
@@ -115,53 +117,4 @@ int	is_key_down(uint8_t scancode)
 int	is_key_toggled(uint8_t scancode)
 {
 	return ((scancode < MAX_KEYS) ? ((key_state[scancode] >> 1) & 0x01) : 0);
-}
-
-// F-key handler functions
-void	f1_handler(void)
-{
-	screen_switch(0);
-}
-
-void	f2_handler(void)
-{
-	screen_switch(1);
-}
-
-void	f3_handler(void)
-{
-	screen_switch(2);
-}
-
-void	f4_handler(void)
-{
-	fg_index = (fg_index + 1) % (sizeof(fg_cycle) / sizeof(fg_cycle[0]));
-	vga_color = VGA_COLOR(fg_cycle[fg_index], VGA_BLACK);
-	draw_color_indicator();
-}
-
-void	f5_handler(void)
-{
-	screen_reset_active(-1);
-	screen_apply_active();
-}
-
-void	f6_handler(void)
-{
-}
-
-void	f7_handler(void)
-{
-}
-
-void	f8_handler(void)
-{
-}
-
-void	f9_handler(void)
-{
-}
-
-void	f10_handler(void)
-{
 }

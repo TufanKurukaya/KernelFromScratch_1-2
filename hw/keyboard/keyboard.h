@@ -23,6 +23,8 @@ typedef struct
 }					repeat_state_t;
 
 extern repeat_state_t	repeat;
+typedef void			(*f_key_handler_t)(void);
+extern f_key_handler_t	f_keys[12];
 
 void				keyboard_isr(uint8_t scancode);
 int					input_poll(input_command_t *out);
@@ -31,6 +33,9 @@ int					is_key_down(uint8_t scancode);
 int					is_key_toggled(uint8_t scancode);
 void				enqueue(input_command_t cmd);
 void				handle_key_repeat(void);
+void				keyboard_handler(void);
+void				handeler_arrow(char c);
+char	scancode_to_char(uint8_t scancode);
 
 // F-key handler functions
 void				f1_handler(void);

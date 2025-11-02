@@ -46,9 +46,14 @@ static inline void	vga_clear(uint8_t color)
 	}
 }
 
+void					putchar(char c);
 void					vga_enable_cursor(uint8_t cursor_start,
 							uint8_t cursor_end);
 void					vga_disable_cursor(void);
 void					vga_update_hw_cursor(void);
+void					vga_print(const char *s);
+void					scroll(void);
+void					shift_left_line(void);
+void					shift_right_line(void);
 
 #endif

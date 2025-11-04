@@ -11,7 +11,7 @@ CC       := gcc
 LD       := ld
 STRIP    := objcopy
 
-ASMFLAGS := -f elf32
+ASMFLAGS := -f elf32 -g
 CFLAGS   := -m32 -ffreestanding -fno-builtin -fno-stack-protector -Os -Wall -Wextra -nostdlib -nodefaultlibs -fno-unwind-tables -g
 LDFLAGS  := -m elf_i386 -T arch/boot/linker.ld -nostdlib -g
 
@@ -52,7 +52,7 @@ $(BUILD)/%.o: %.s | $(BUILD)
 # Linkleme
 $(TARGET): $(OBJS)
 	$(LD) $(LDFLAGS) -o $@ $(OBJS)
-	$(STRIP) --strip-unneeded $@
+# $(STRIP) --strip-unneeded $@
 
 # ==========================================================
 # 💿 ISO oluşturma ve QEMU ile çalıştırma
@@ -61,15 +61,7 @@ $(TARGET): $(OBJS)
 iso: $(TARGET)
 	mkdir -p iso/boot/grub
 	cp $(TARGET) iso/boot/
-	echo 'set timeout=0' > iso/boot/grub/grub.cfg
-	echo 'set default=0' >> iso/boot/grub/grub.cfg
-	echo 'menuentry "KFS Kernel" {' >> iso/boot/grub/grub.cfg
-	echo '  multiboot /boot/$(TARGET)' >> iso/boot/grub/grub.cfg
-	echo '  boot' >> iso/boot/grub/grub.cfg
-	echo '}' >> iso/boot/grub/grub.cfg
-	grub-mkrescue --locales="" --fonts="" --themes="" \
-		--modules="multiboot iso9660 normal" \
-		-o $(ISO) iso
+	grub-mkrescue -o $(ISO) iso
 
 run: iso
 	qemu-system-i386 -cdrom $(ISO)
@@ -85,7 +77,7 @@ clean:
 	rm -rf $(BUILD)
 
 fclean: clean
-	rm -rf $(ISO) $(TARGET) iso
+	rm -rf $(ISO) $(TARGET)
 
 re: fclean all
 

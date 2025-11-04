@@ -2,7 +2,11 @@
 #if !defined(GDT_H)
 # define GDT_H
 
+# define GDT_ADDR 0x00000800
+
 # include <stdint.h>
+
+
 
 struct __attribute__((packed)) gdt_entry
 {

@@ -16,5 +16,6 @@ gdt_reload_segments:
     mov es, ax
     mov fs, ax
     mov gs, ax
+    mov ax, 0x18
     mov ss, ax
     ret

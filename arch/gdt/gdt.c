@@ -2,9 +2,8 @@
 #include "gdt.h"
 #include "../../lib/utils.h"
 
-static struct gdt_entry	gdt[3];
+static struct gdt_entry	gdt[7];
 struct gdt_ptr			gdtp;
-
 extern void				gdt_load(void);
 extern void				gdt_reload_segments(void);
 
@@ -40,12 +39,15 @@ static void	gdt_set(int idx, uint32_t base, uint32_t limit, uint8_t access,
 void	gdt_init(void)
 {
 	gdtp.limit = sizeof(gdt) - 1;
-	gdtp.base = (uint32_t)&gdt;
+	gdtp.base = GDT_ADDR;
 	gdt_set(0, 0, 0, 0, 0);
 	gdt_set(1, 0, 0xFFFFF, 0x9A, 0xCF);
 	gdt_set(2, 0, 0xFFFFF, 0x92, 0xCF);
-	// user icin de ayarlanacak
+	gdt_set(3, 0, 0xFFFFF, 0x96, 0xCF);
+	gdt_set(4, 0, 0xFFFFF, 0xFA, 0xCF);
+	gdt_set(5, 0, 0xFFFFF, 0xF2, 0xCF);
+	gdt_set(6, 0, 0xFFFFF, 0xF6, 0xCF);
+	memmove((void *)GDT_ADDR, gdt, sizeof(gdt));
 	gdt_load();
 	gdt_reload_segments();
 }
-

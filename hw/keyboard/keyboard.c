@@ -1,10 +1,13 @@
-#include "inc/keyboard.h"
-#include "inc/screen.h"
+#include "keyboard.h"
+#include "../screen/screen.h"
+#include "../../arch/boot/io.h"
+static input_command_t		cmd_queue[CMD_QUEUE_SIZE];
+static int					head = 0, tail = 0;
+static uint8_t				key_state[128];
+repeat_state_t				repeat = {0};
 
-static input_command_t	cmd_queue[CMD_QUEUE_SIZE];
-static int				head = 0, tail = 0;
-static uint8_t			key_state[128];
-repeat_state_t			repeat = {0};
+extern volatile uint16_t	*vga_buffer;
+extern volatile uint8_t		vga_color;
 
 static int	queue_is_full(void)
 {
@@ -40,6 +43,14 @@ void	keyboard_isr(unsigned char scancode)
 	cmd.scancode = scancode & 0x7F;
 	cmd.type = (scancode & 0x80) ? 1 : 0;
 	enqueue(cmd);
+}
+
+void	keyboard_handler(void)
+{
+	uint8_t	scancode;
+
+	scancode = inb(0x60);
+	keyboard_isr(scancode);
 }
 
 int	input_poll(input_command_t *out)
@@ -83,7 +94,7 @@ void	update_key_state(input_command_t *cmd)
 
 void	handle_key_repeat(void)
 {
-		input_command_t cmd;
+	input_command_t	cmd;
 
 	if (!repeat.active)
 		return ;
@@ -106,48 +117,4 @@ int	is_key_down(uint8_t scancode)
 int	is_key_toggled(uint8_t scancode)
 {
 	return ((scancode < MAX_KEYS) ? ((key_state[scancode] >> 1) & 0x01) : 0);
-}
-
-// F-key handler functions
-void	f1_handler(void)
-{
-	screen_switch(0);
-}
-
-void	f2_handler(void)
-{
-	screen_switch(1);
-}
-
-void	f3_handler(void)
-{
-	screen_switch(2);
-}
-
-void	f4_handler(void)
-{
-}
-
-void	f5_handler(void)
-{
-}
-
-void	f6_handler(void)
-{
-}
-
-void	f7_handler(void)
-{
-}
-
-void	f8_handler(void)
-{
-}
-
-void	f9_handler(void)
-{
-}
-
-void	f10_handler(void)
-{
 }

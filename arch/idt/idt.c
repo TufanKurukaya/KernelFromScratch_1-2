@@ -1,9 +1,8 @@
 // src/idt.c
-#include "inc/idt.h"
+#include "idt.h"
 
 static struct idt_entry	idt[256];
 struct idt_ptr			idtp;
-
 extern void				idt_load(void);
 
 void	idt_set_gate(int num, uint32_t base, uint16_t sel, uint8_t flags)

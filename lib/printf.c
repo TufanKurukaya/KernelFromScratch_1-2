@@ -1,9 +1,11 @@
-#include "inc/printf.h"
-
+#include "printf.h"
+#include "utils.h"
 void		putchar(char c);
+
 int	print_char(int c)
 {
-	putchar(c);
+	if (isprint(c) || c == '\n')
+		putchar(c);
 	return (1);
 }
 
@@ -46,7 +48,7 @@ int	print_hex(unsigned long num, char format, int len)
 
 int	print_int(long num, int len)
 {
-	char	dec_result[1024];
+	char	dec_result[32];
 	int		i;
 
 	i = 0;
@@ -55,6 +57,25 @@ int	print_int(long num, int len)
 		len += print_char('-');
 		num = -num;
 	}
+	if (!num)
+		len += print_char('0');
+	while (num > 0 && len >= 0)
+	{
+		dec_result[i++] = "0123456789"[num % 10];
+		num /= 10;
+	}
+	dec_result[i] = '\0';
+	while (i > 0 && len >= 0)
+		len += print_char(dec_result[--i]);
+	return (len);
+}
+
+int	print_u_int(unsigned long num, int len)
+{
+	char	dec_result[32];
+	int		i;
+
+	i = 0;
 	if (!num)
 		len += print_char('0');
 	while (num > 0 && len >= 0)
@@ -87,7 +108,7 @@ static int	formater(va_list *arg, char format)
 	else if (format == 'd' || format == 'i')
 		return (print_int(va_arg(*arg, int), 0));
 	else if (format == 'u')
-		return (print_int(va_arg(*arg, unsigned int), 0));
+		return (print_u_int(va_arg(*arg, unsigned int), 0));
 	else if (format == 'x' || format == 'X')
 		return (print_hex(va_arg(*arg, unsigned int), format, 0));
 	else if (format == '%')

@@ -2,6 +2,7 @@
 BITS 32
 GLOBAL gdt_load
 GLOBAL gdt_reload_segments
+GLOBAL tss_load_tr
 EXTERN gdtp
 
 gdt_load:
@@ -16,6 +17,12 @@ gdt_reload_segments:
     mov es, ax
     mov fs, ax
     mov gs, ax
-    mov ax, 0x18
     mov ss, ax
+    ret
+
+tss_load_tr:
+    ; arg: selector (uint16_t) stack'te
+    ; cdecl: [esp+4] = selector
+    mov ax, [esp+4]
+    ltr ax                 ; Task Register = TSS selector
     ret

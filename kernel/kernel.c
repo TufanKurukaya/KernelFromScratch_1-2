@@ -12,6 +12,11 @@
 #include <stddef.h>
 #include <stdint.h>
 #include "kernel.h"
+#include "../arch/tss/tss.h"
+extern void user_main();
+__attribute__((aligned(16))) uint8_t _user_stack[4096];
+uint32_t _user_stack_top = (uint32_t)_user_stack + sizeof(_user_stack);
+static uint8_t kernel_stack[4096] __attribute__((aligned(16)));
 
 void	kernel_main(uint32_t magic)
 {
@@ -30,6 +35,8 @@ void	kernel_main(uint32_t magic)
 			__asm__ __volatile__("hlt");
 	}
 	gdt_init();
+    uint32_t kstack_top = (uint32_t)kernel_stack + sizeof(kernel_stack);
+    tss_init(kstack_top);
 	idt_init();
 	pic_remap(0x20, 0x28);
 	pic_mask_all_irqs();
@@ -39,6 +46,8 @@ void	kernel_main(uint32_t magic)
 	init_screen();
 	vga_enable_cursor(0, 15);
 	vga_update_hw_cursor();
+    extern void enter_user_mode();
+    enter_user_mode(user_main, _user_stack_top);
 	for (;;)
 	{
 		while (input_poll(&cmd))
@@ -89,4 +98,65 @@ void	kernel_main(uint32_t magic)
 		handle_key_repeat();
 		__asm__ __volatile__("hlt");
 	}
+}
+
+
+void user_main()
+{
+		input_command_t	cmd;
+	uint8_t			code;
+	char			c;
+	int				idx;
+	putchar('s');
+	for (;;)
+	{
+		// while (input_poll(&cmd))
+		// {
+		// 	update_key_state(&cmd);
+		// 	if (cmd.type == 0)
+		// 	{
+		// 		code = cmd.scancode;
+		// 		if (code >= 0x3B && code <= 0x44)
+		// 		{
+		// 			idx = code - 0x3B;
+		// 			if (f_keys[idx] != NULL)
+		// 			{
+		// 				f_keys[idx]();
+		// 			}
+		// 			continue ;
+		// 		}
+		// 		if (code == 77 || code == 75 || code == 72 || code == 80)
+		// 		{
+		// 			handeler_arrow(code);
+		// 			continue ;
+		// 		}
+		// 		else if (code == 0x53)
+		// 		{
+		// 			if ((vga_buffer[cursor_y * VGA_WIDTH
+		// 					+ cursor_x] & 0xFF) != 0)
+		// 				shift_left_line();
+		// 			continue ;
+		// 		}
+		// 		c = scancode_to_char(code);
+		// 		if (isprint(c) || c == '\b')
+		// 		{
+		// 			if (c != '\b' && cursor_x < (VGA_WIDTH - 1))
+		// 				shift_right_line();
+		// 			putchar(c);
+		// 		}
+		// 		else if (c == '\n')
+		// 		{
+		// 			command_enter();
+		// 			if (cursor_y >= VGA_HEIGHT)
+		// 				scroll();
+		// 		}
+		// 		else if (c == '\t')
+		// 			navigate_history(72);
+		// 		vga_update_hw_cursor();
+		// 	}
+		// }
+		// handle_key_repeat();
+		__asm__ __volatile__("hlt");
+	}
+
 }

@@ -2,13 +2,13 @@
 #include "gdt.h"
 #include "../../lib/utils.h"
 
-static struct gdt_entry	gdt[7];
+struct gdt_entry	gdt[6];
 struct gdt_ptr			gdtp;
 extern void				gdt_load(void);
 extern void				gdt_reload_segments(void);
 
 
-static void	gdt_set(int idx, uint32_t base, uint32_t limit, uint8_t access,
+void	gdt_set(int idx, uint32_t base, uint32_t limit, uint8_t access,
 		uint8_t gran)
 {
 	gdt[idx].limit_low = limit & 0xFFFF;
@@ -41,12 +41,12 @@ void	gdt_init(void)
 	gdtp.limit = sizeof(gdt) - 1;
 	gdtp.base = GDT_ADDR;
 	gdt_set(0, 0, 0, 0, 0);
-	gdt_set(1, 0, 0xFFFFF, 0x9A, 0xCF);
-	gdt_set(2, 0, 0xFFFFF, 0x92, 0xCF);
-	gdt_set(3, 0, 0xFFFFF, 0x96, 0xCF);
-	gdt_set(4, 0, 0xFFFFF, 0xFA, 0xCF);
-	gdt_set(5, 0, 0xFFFFF, 0xF2, 0xCF);
-	gdt_set(6, 0, 0xFFFFF, 0xF6, 0xCF);
+	gdt_set(GDT_KERNEL_CODE, 0, 0xFFFFF, 0x9A, 0xCF);
+	gdt_set(GDT_KERNEL_DATA, 0, 0xFFFFF, 0x92, 0xCF);
+	gdt_set(GDT_USER_CODE, 0, 0xFFFFF, 0xFA, 0xCF);
+	gdt_set(GDT_USER_DATA, 0, 0xFFFFF, 0xF2, 0xCF);
+    gdt_set(GDT_TSS, 0, 0, 0x89, 0x00);
+    
 	memmove((void *)GDT_ADDR, gdt, sizeof(gdt));
 	gdt_load();
 	gdt_reload_segments();

@@ -98,10 +98,10 @@ IDT gate “type/attributes” baytı (8 bit)
 ---
 | Bit(ler) | Alan            | Anlam                                                                                                                                                                            |
 | -------- | --------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 7        | **P (Present)** | 1 ise giriş geçerli; 0 ise vektör tetiklendiğinde “descriptor not present” hatası. ([wiki.osdev.org][1])                                                                         |
-| 6–5      | **DPL**         | `INT` ile **yazılımsal** tetikleme yapabilmek için gereken en az ayrıcalık seviyesi (CPL ≤ DPL olmalı). Donanım kesmeleri/istisnalar DPL’yi kontrol etmez. ([wiki.osdev.org][1]) |
-| 4        | **S**           | “Storage Segment” biti. **IDT gate’lerinde her zaman 0** (gate = sistem tanımlayıcısı). ([wiki.osdev.org][2])                                                                    |
-| 3–0      | **Type**        | Kapı türünü belirtir (aşağıdaki tam tablo). ([wiki.osdev.org][2])                                                                                                                |
+| 7        | **P (Present)** | Bu kesme kapısı bellekte mevcut ve kullanıma hazır. Eğer bu **0** olsaydı, bu kesme tetiklendiğinde işlemci bir istisna (exception) fırlatırdı. ([wiki.osdev.org][1])                                                                         |
+| 6–5      | **DPL**         | Bu kapının ayrıcalık seviyesi **Ring 0** (kernel seviyesi). Bu, bu kapının en yüksek ayrıcalık seviyesinde olduğunu belirtir. Donanım kesmeleri için bu genellikle 0 olarak ayarlanır. ([wiki.osdev.org][1]) |
+| 4        | **S**           | Bu bit **0** olmalıdır. **0** olması bunun bir TSS (Task State Segment) değil, bir kesme veya tuzak kapısı olduğunu belirtir. ([wiki.osdev.org][2])                                                                    |
+| 3–0      | **Type**        | Bu 4 bit, kapının türünü tanımlar. 1110 (veya hex 0xE), bunun bir **"32-bit Interrupt Gate" (32-bit Kesme Kapısı)** olduğunu belirtir. ([wiki.osdev.org][2])                                                                                                                |
 
 [1]: https://wiki.osdev.org/Interrupt_Descriptor_Table "Interrupt Descriptor Table - OSDev Wiki"
 [2]: https://wiki.osdev.org/Descriptor "Descriptor - OSDev Wiki"

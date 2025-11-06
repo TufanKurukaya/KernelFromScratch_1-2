@@ -105,3 +105,14 @@ void	*memset(void *s, int c, size_t n)
 	}
 	return (s);
 }
+
+
+int strcmp(char *dst, char *src)
+{
+	size_t i;
+
+	i = 0;
+	while (dst[i] && src[i] && dst[i] == src[i])
+		i++;
+	return ((unsigned char)dst[i] - (unsigned char)src[i]);
+}

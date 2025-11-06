@@ -10,14 +10,14 @@
 #define ICW1_INIT 0x10
 #define ICW1_ICW4 0x01
 #define ICW4_8086 0x03 // + AEOI
+void	pic_mask_all_irqs(void)
+{
+	outb(PIC1_DATA, 0xFF);
+	outb(PIC2_DATA, 0xFF);
+}
 
 void	pic_remap(int offset1, int offset2)
 {
-	uint8_t	a1;
-	uint8_t	a2;
-
-	a1 = inb(PIC1_DATA);
-	a2 = inb(PIC2_DATA);
 	outb(PIC1_CMD, ICW1_INIT | ICW1_ICW4);
 	outb(PIC2_CMD, ICW1_INIT | ICW1_ICW4);
 	outb(PIC1_DATA, offset1);
@@ -26,8 +26,7 @@ void	pic_remap(int offset1, int offset2)
 	outb(PIC2_DATA, 0x02);
 	outb(PIC1_DATA, ICW4_8086);
 	outb(PIC2_DATA, ICW4_8086);
-	outb(PIC1_DATA, a1);
-	outb(PIC2_DATA, a2);
+	pic_mask_all_irqs();
 }
 
 void	pic_unmask_irq1(void)
@@ -42,10 +41,4 @@ void	pic_unmask_irq1(void)
 void	pic_send_eoi_master(void)
 {
 	outb(PIC1_CMD, 0x20);
-}
-
-void	pic_mask_all_irqs(void)
-{
-	outb(PIC1_DATA, 0xFF);
-	outb(PIC2_DATA, 0xFF);
 }

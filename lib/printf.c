@@ -22,7 +22,7 @@ int	print_str(char *str)
 	return (i);
 }
 
-int	print_hex(unsigned long num, char format, int len)
+int	print_hex(unsigned long long num, char format, int len)
 {
 	char	hex_result[1024];
 	int		i;

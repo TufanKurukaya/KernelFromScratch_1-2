@@ -2,7 +2,7 @@
 #include "gdt.h"
 #include "../../lib/utils.h"
 
-static struct gdt_entry	gdt[7];
+static struct gdt_entry	gdt[6];
 struct gdt_ptr			gdtp;
 extern void				gdt_load(void);
 extern void				gdt_reload_segments(void);
@@ -43,10 +43,8 @@ void	gdt_init(void)
 	gdt_set(0, 0, 0, 0, 0);
 	gdt_set(1, 0, 0xFFFFF, 0x9A, 0xCF);
 	gdt_set(2, 0, 0xFFFFF, 0x92, 0xCF);
-	gdt_set(3, 0, 0xFFFFF, 0x96, 0xCF);
 	gdt_set(4, 0, 0xFFFFF, 0xFA, 0xCF);
 	gdt_set(5, 0, 0xFFFFF, 0xF2, 0xCF);
-	gdt_set(6, 0, 0xFFFFF, 0xF6, 0xCF);
 	memmove((void *)GDT_ADDR, gdt, sizeof(gdt));
 	gdt_load();
 	gdt_reload_segments();

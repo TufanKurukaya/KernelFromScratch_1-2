@@ -12,7 +12,7 @@ LD       := ld
 STRIP    := objcopy
 
 ASMFLAGS := -f elf32 -g
-CFLAGS   := -m32 -ffreestanding -fno-builtin -fno-stack-protector -Os -Wall -Wextra -nostdlib -nodefaultlibs -fno-unwind-tables -g
+CFLAGS   := -m32 -ffreestanding -fno-builtin -fno-stack-protector -fno-pic -fno-exceptions -fno-unwind-tables -nostdlib -nodefaultlibs -Os -Wall -Wextra -g
 LDFLAGS  := -m elf_i386 -T arch/boot/linker.ld -nostdlib -g
 
 # ==========================================================
@@ -52,7 +52,7 @@ $(BUILD)/%.o: %.s | $(BUILD)
 # Linkleme
 $(TARGET): $(OBJS)
 	$(LD) $(LDFLAGS) -o $@ $(OBJS)
-# $(STRIP) --strip-unneeded $@
+	$(STRIP) --strip-unneeded $@
 
 # ==========================================================
 # 💿 ISO oluşturma ve QEMU ile çalıştırma
@@ -78,6 +78,7 @@ clean:
 
 fclean: clean
 	rm -rf $(ISO) $(TARGET)
+	rm -rf iso/boot/$(TARGET)
 
 re: fclean all
 

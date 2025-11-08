@@ -1,9 +1,10 @@
-#include "keyboard.h"
-#include "../vga/vga.h"
-#include "../screen/screen.h"
 #include "../../lib/utils.h"
+#include "../screen/screen.h"
+#include "../vga/vga.h"
+#include "keyboard.h"
 
-static const char		scancode_table[128] = {// keyboard
+static const char	scancode_table[128] = {
+	// keyboard
 	0,   27,  '1', '2', '3', '4', '5', '6', '7', '8', '9',  '0', '-',  '=',
 		 '\b', '\t',
 
@@ -18,7 +19,8 @@ static const char		scancode_table[128] = {// keyboard
 
 };
 
-static const char		scancode_table_shifted[128] = {// keyboard
+static const char	scancode_table_shifted[128] = {
+	// keyboard
 	0,   27,  '!', '@', '#', '$', '%', '^', '&', '*', '(',  ')', '_',  '+',
 		'\b', '\t',
 
@@ -56,17 +58,17 @@ void	handeler_arrow(char c)
 {
 	switch (c)
 	{
-		case 77:
-			if (cursor_x < VGA_WIDTH - 1)
-				cursor_x++;
-			break ;
-		case 75:
-			if (cursor_x > 0)
-				cursor_x--;
-			break ;
-		default:
-			navigate_history(c);
-			break ;
+	case 77:
+		if (cursor_x < VGA_WIDTH - 1)
+			cursor_x++;
+		break ;
+	case 75:
+		if (cursor_x > 0)
+			cursor_x--;
+		break ;
+	default:
+		navigate_history(c);
+		break ;
 	}
 	vga_update_hw_cursor();
 }

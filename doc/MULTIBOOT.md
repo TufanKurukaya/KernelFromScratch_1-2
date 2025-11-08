@@ -1,135 +1,436 @@
+# Multiboot Specification
 
-Multiboot_info
----
-| Bit    | Hex mask   | Alan(lar)                           | Anlamı                                                       |
-| ------ | ---------- | ----------------------------------- | ------------------------------------------------------------ |
-| **0**  | 0x00000001 | `mem_lower`, `mem_upper`            | 1 MB altı ve üstü bellek boyutları geçerli. (KB cinsinden)   |
-| **1**  | 0x00000002 | `boot_device`                       | Kernel’in hangi cihazdan boot edildiği bilgisi var.          |
-| **2**  | 0x00000004 | `cmdline`                           | Kernel komut satırı (`grub.cfg` içinden) adresi geçerli.     |
-| **3**  | 0x00000008 | `mods_count`, `mods_addr`           | Yüklenmiş modüller (initrd, ramdisk vb.) bilgisi geçerli.    |
-| **4**  | 0x00000010 | a.out sembol tablosu                | Kernel a.out formatında ise sembol bilgileri geçerli.        |
-| **5**  | 0x00000020 | ELF section header tablosu          | Kernel ELF formatında ise section header bilgileri geçerli.  |
-| **6**  | 0x00000040 | `mmap_addr`, `mmap_length`          | Bellek haritası (hangi bölge RAM, hangisi rezervli) geçerli. |
-| **7**  | 0x00000080 | `drives_addr`, `drives_length`      | BIOS disk sürücüleri listesi geçerli.                        |
-| **8**  | 0x00000100 | `config_table`                      | ROM config table (eski makineler için) geçerli.              |
-| **9**  | 0x00000200 | `boot_loader_name`                  | Kullanılan bootloader’ın adı geçerli (örn. “GRUB 2.06”).     |
-| **10** | 0x00000400 | `apm_table`                         | APM (Advanced Power Management) tabloları geçerli.           |
-| **11** | 0x00000800 | `vbe_control_info`, `vbe_mode_info` | VESA BIOS Extension (grafik mod bilgisi) geçerli.            |
-| **12** | 0x00001000 | `framebuffer_addr`, `framebuffer_*` | Framebuffer bilgisi (modern grafik modu) geçerli.            |
+## 📋 İçindekiler
 
-Boot Loader karşılaştırma
----
-| Özellik                | GRUB                       | Limine + Stivale2                  |
-| ---------------------- | -------------------------- | ---------------------------------- |
-| Amaç                   | Genel amaçlı bootloader    | OS geliştiriciler için optimize    |
-| Protokol               | Multiboot v1/v2            | Limine protokolü, Stivale/Stivale2 |
-| Destek                 | Birçok OS, eski sistemler  | Özellikle yeni kernel’ler          |
-| Karmaşıklık            | Ağır, config dosyaları var | Çok basit, tek binary yeterli      |
-| Geliştirme hızı        | Eski, yavaş                | Aktif, modern                      |
-| Kernel bilgisi aktarma | Multiboot yapıları         | Çok daha düzenli Stivale2 yapıları |
+- [Genel Bakış](#genel-bakış)
+- [Multiboot Nedir?](#multiboot-nedir)
+- [Multiboot Header](#multiboot-header)
+- [Multiboot Info Structure](#multiboot-info-structure)
+- [Boot Sürecinde Multiboot](#boot-sürecinde-multiboot)
+- [KFS-1'de Multiboot Kullanımı](#kfs-1de-multiboot-kullanımı)
+- [GRUB vs Diğer Bootloader'lar](#grub-vs-diğer-bootloaderlar)
+- [Debug ve Test](#debug-ve-test)
 
-MULTIBOOT_FLAGS bitleri
 ---
 
-| Bit   | Anlamı                               | Açıklama                                                                   | 
-| ----- | ------------------------------------ | -------------------------------------------------------------------------- | 
-| 0     | Page-align modules                   | Modülleri 4 KB hizalı yükle                                                | 
-| 1     | Memory info required                 | Bellek bilgisi verilmezse boot etme                                        | 
-| 2     | Video mode request                   | Grafik modu iste                                                           | 
-| 3–15  | Reserved                             | Kullanılmaz, hep 0 olmalı                                                  | 
-| 16    | AOUT kludge (adres alanları geçerli) | load\_addr, load\_end\_addr, bss\_end\_addr, entry\_addr alanlarını kullan | 
-| 17–31 | Reserved                             | Kullanılmaz, hep 0 olmalı                                                  | 
+## Genel Bakış
 
-outb inb Portlar
+**Multiboot**, bootloader ve işletim sistemi kernel'i arasındaki standart bir arayüzdür. Bu spesifikasyon, farklı bootloader'ların (GRUB, LILO, vb.) aynı kernel'i yükleyebilmesini sağlar.
+
+### Neden Multiboot?
+
+- ✅ **Taşınabilirlik**: Kernel, farklı bootloader'larla çalışabilir
+- ✅ **Standart**: Herkes aynı protokolü kullanır
+- ✅ **Bilgi Aktarımı**: Bootloader, kernel'e bellek, modül vb. bilgileri verir
+- ✅ **Esneklik**: Kernel'in ihtiyaçlarını belirtebilir (bellek, video modu vb.)
+
 ---
-| Port  | Cihaz           | Görev                               |
-| ----- | --------------- | ----------------------------------- |
-| 0x3D4 | VGA (CRTC)      | Hangi cursor register’ını seçer     |
-| 0x3D5 | VGA (CRTC)      | Cursor register değerini okur/yazar |
-| 0x20  | Master PIC CMD  | Komut (init, EOI vs)                |
-| 0x21  | Master PIC DATA | Maske/ayar                          |
-| 0xA0  | Slave PIC CMD   | Komut                               |
-| 0xA1  | Slave PIC DATA  | Maske/ayar                          |
 
+## Multiboot Nedir?
 
-Uniq Key Scancode
+Multiboot, iki ana bileşenden oluşur:
+
+1. **Multiboot Header** (Kernel'de)
+   - Kernel binary'sinin ilk 8KB'sında bulunmalı
+   - Bootloader'a "ben multiboot-compatible bir kernel'im" der
+
+2. **Multiboot Info Structure** (Bootloader'dan)
+   - Bootloader, kernel'e sistem bilgilerini bu yapı ile aktarır
+   - Bellek miktarı, boot cihazı, komut satırı, vb.
+
+### Multiboot Versiyonları:
+
+| Versiyon | Durum | Kullanım |
+|----------|-------|----------|
+| **Multiboot 1** | ✅ Stable | KFS-1'de kullanılan, yaygın |
+| **Multiboot 2** | ✅ Stable | Daha modern, daha fazla özellik |
+
+KFS-1, **Multiboot 1** kullanır (basit ve yeterli).
+
 ---
-| Key     | Value |
-| ------- | ----- |
-| ALT     |  56   |
-| CTRL    |  29   |
-| L-SHIFT |  42   |
-| R-SHIFT |  54   |
-| CAPSLCK |  58   |
-| ESC     |  1    |
-| DEL     |  83   |
-| R-ARROW |  77   |
-| L-ARROW |  75   |
-| U-ARROW |  72   |
-| ALT-GR  |  56   |
-| D-ARROW |  80   |
 
+## Multiboot Header
 
-Segment register'ı
+Kernel binary'sinin **ilk 8192 byte**'ında bulunmalıdır. GRUB, bu header'ı arayarak kernel'in multiboot-compatible olup olmadığını anlar.
+
+### Header Yapısı:
+
+```c
+struct multiboot_header {
+    uint32_t magic;         // 0x1BADB002 (sabit değer)
+    uint32_t flags;         // Özellik bayrakları
+    uint32_t checksum;      // -(magic + flags)
+    
+    // flags bit 16 set ise (AOUT_KLUDGE):
+    uint32_t header_addr;   // Header'ın fiziksel adresi
+    uint32_t load_addr;     // Kernel'in yükleneceği adres
+    uint32_t load_end_addr; // Yüklemenin biteceği adres
+    uint32_t bss_end_addr;  // BSS section'ın sonu
+    uint32_t entry_addr;    // Kernel entry point
+    
+    // flags bit 2 set ise (VIDEO_MODE):
+    uint32_t mode_type;     // 0=linear, 1=text
+    uint32_t width;         // Genişlik (karakter veya pixel)
+    uint32_t height;        // Yükseklik
+    uint32_t depth;         // Bit derinliği (grafik modda)
+} __attribute__((packed));
+```
+
+### Magic Number:
+
+```c
+#define MULTIBOOT_HEADER_MAGIC   0x1BADB002
+#define MULTIBOOT_BOOTLOADER_MAGIC 0x2BADB002
+```
+
+- **0x1BADB002**: Kernel'in header'ında olmalı
+- **0x2BADB002**: Bootloader, kernel'e bu magic'i EAX'te verir
+
+### Flags Biti Anlamları:
+
+| Bit | Mask | Alan | Anlamı |
+|-----|------|------|--------|
+| **0** | 0x00000001 | Page-align modules | Modülleri 4KB hizalı yükle |
+| **1** | 0x00000002 | Memory info | Bellek bilgisi zorunlu |
+| **2** | 0x00000004 | Video mode | Video modu isteği |
+| **16** | 0x00010000 | AOUT kludge | Adres alanları kullan |
+
+### Checksum:
+
+Checksum, magic ve flags toplamının negatifi olmalıdır:
+
+```c
+checksum = -(magic + flags)
+```
+
+Doğrulama:
+```c
+if (magic + flags + checksum == 0) {
+    // Header geçerli
+}
+```
+
+### KFS-1 Multiboot Header (Assembly):
+
+```asm
+; arch/boot/boot.s
+SECTION .multiboot
+align 4
+
+MULTIBOOT_MAGIC     equ 0x1BADB002
+MULTIBOOT_FLAGS     equ 0x00000003    ; Bit 0 + Bit 1
+MULTIBOOT_CHECKSUM  equ -(MULTIBOOT_MAGIC + MULTIBOOT_FLAGS)
+
+dd MULTIBOOT_MAGIC
+dd MULTIBOOT_FLAGS
+dd MULTIBOOT_CHECKSUM
+```
+
+**Açıklama:**
+- `MULTIBOOT_FLAGS = 0x03` → Bit 0 (page-align) + Bit 1 (memory info)
+- `MULTIBOOT_CHECKSUM = -(0x1BADB002 + 0x03) = 0xE4524FFB`
+
 ---
-| Register | Ne için kullanılır?                   | Senin durumda değer  |
-| -------- | ------------------------------------- | -------------------- |
-| **CS**   | Kod (instruction fetch)               | `0x08` (kernel code) |
-| **DS**   | Veri (normal değişkenler)             | `0x10` (kernel data) |
-| **SS**   | Stack (push/pop/call/ret)             | `0x10` (kernel data) |
-| **ES**   | Ek veri, string komut hedefi          | `0x10` (kernel data) |
-| **FS**   | Ek veri, modern OS’te thread-local    | `0x10` (kernel data) |
-| **GS**   | Ek veri, modern OS’te CPU/thread info | `0x10` (kernel data) |
 
-Access byte 0x9A
+## Multiboot Info Structure
+
+Bootloader (GRUB), kernel'i çağırırken **EBX registerında** multiboot info structure'ın adresini verir.
+
+### Register Durumu (Kernel Entry):
+
+```
+EAX = 0x2BADB002    // Multiboot magic (bootloader'dan)
+EBX = <address>     // multiboot_info structure adresi
+```
+
+### Multiboot Info Yapısı:
+
+```c
+struct multiboot_info {
+    uint32_t flags;              // Hangi alanlar geçerli?
+    
+    // flags[0] = 1 ise geçerli:
+    uint32_t mem_lower;          // KB cinsinden < 1MB bellek
+    uint32_t mem_upper;          // KB cinsinden > 1MB bellek
+    
+    // flags[1] = 1 ise geçerli:
+    uint32_t boot_device;        // Boot edilen cihaz
+    
+    // flags[2] = 1 ise geçerli:
+    uint32_t cmdline;            // Komut satırı string adresi
+    
+    // flags[3] = 1 ise geçerli:
+    uint32_t mods_count;         // Yüklenen modül sayısı
+    uint32_t mods_addr;          // Modül bilgileri adresi
+    
+    // flags[4] veya [5] = 1 ise geçerli:
+    uint32_t syms[4];            // a.out veya ELF sembol tablosu
+    
+    // flags[6] = 1 ise geçerli:
+    uint32_t mmap_length;        // Memory map uzunluğu
+    uint32_t mmap_addr;          // Memory map adresi
+    
+    // flags[7] = 1 ise geçerli:
+    uint32_t drives_length;      // BIOS drive bilgisi
+    uint32_t drives_addr;
+    
+    // flags[8] = 1 ise geçerli:
+    uint32_t config_table;       // ROM config table
+    
+    // flags[9] = 1 ise geçerli:
+    uint32_t boot_loader_name;   // Bootloader adı string adresi
+    
+    // flags[10] = 1 ise geçerli:
+    uint32_t apm_table;          // APM table
+    
+    // flags[11] = 1 ise geçerli:
+    uint32_t vbe_control_info;   // VBE bilgisi
+    uint32_t vbe_mode_info;
+    uint16_t vbe_mode;
+    uint16_t vbe_interface_seg;
+    uint16_t vbe_interface_off;
+    uint16_t vbe_interface_len;
+    
+    // flags[12] = 1 ise geçerli:
+    uint64_t framebuffer_addr;   // Framebuffer adresi
+    uint32_t framebuffer_pitch;
+    uint32_t framebuffer_width;
+    uint32_t framebuffer_height;
+    uint8_t  framebuffer_bpp;    // Bits per pixel
+    uint8_t  framebuffer_type;
+    // ...color info...
+} __attribute__((packed));
+```
+
+### Flags Biti Detayları:
+
+| Bit | Hex | Alan | Anlamı |
+|-----|-----|------|--------|
+| **0** | 0x00000001 | mem_lower, mem_upper | Bellek boyutları (KB) |
+| **1** | 0x00000002 | boot_device | Boot cihazı bilgisi |
+| **2** | 0x00000004 | cmdline | Kernel komut satırı |
+| **3** | 0x00000008 | mods_count, mods_addr | Modüller (initrd vb.) |
+| **4** | 0x00000010 | syms | a.out sembol tablosu |
+| **5** | 0x00000020 | syms | ELF section header |
+| **6** | 0x00000040 | mmap_addr, mmap_length | Bellek haritası |
+| **7** | 0x00000080 | drives | BIOS disk sürücüleri |
+| **8** | 0x00000100 | config_table | ROM config table |
+| **9** | 0x00000200 | boot_loader_name | Bootloader adı |
+| **10** | 0x00000400 | apm_table | APM bilgisi |
+| **11** | 0x00000800 | vbe_* | VESA BIOS Extension |
+| **12** | 0x00001000 | framebuffer_* | Framebuffer bilgisi |
+
+### Örnek Kullanım:
+
+```c
+void kernel_main(uint32_t magic, uint32_t multiboot_addr) {
+    if (magic != MULTIBOOT_BOOTLOADER_MAGIC) {
+        // Multiboot değil, hata!
+        return;
+    }
+    
+    struct multiboot_info *mbi = (struct multiboot_info *)multiboot_addr;
+    
+    if (mbi->flags & 0x01) {
+        // Bellek bilgisi var
+        printf("Lower memory: %d KB\n", mbi->mem_lower);
+        printf("Upper memory: %d KB\n", mbi->mem_upper);
+    }
+    
+    if (mbi->flags & 0x200) {
+        // Bootloader adı var
+        printf("Booted by: %s\n", (char *)mbi->boot_loader_name);
+    }
+}
+```
+
 ---
-| Bit(ler) | Adı (alan)          | Değer | Anlamı (kod segmenti için)                                                              |
-| -------- | ------------------- | ----: | --------------------------------------------------------------------------------------- |
-| 7        | Present (P)         |     1 | Segment bellek­te mevcut; değilse erişimde #NP hatası.                                  |
-| 6–5      | DPL                 |    00 | Ayrıcalık seviyesi Ring 0.                                                              |
-| 4        | Descriptor Type (S) |     1 | Kod/veri segmenti (sistem segmenti değil).                                              |
-| 3        | Executable (E)      |     1 | Bu bir **kod** segmenti.                                                                |
-| 2        | Conforming (C)      |     0 | **Non-conforming**: Sadece aynı ayrıcalık seviyesinden (CPL = DPL) aktarım yapılabilir. |
-| 1        | Readable (R)        |     1 | Kod okunabilir (yazılamaz).                                                             |
-| 0        | Accessed (A)        |     0 | Henüz erişilmemiş; CPU erişince 1 yapar.                                                |
 
+## Boot Sürecinde Multiboot
 
-IDT gate “type/attributes” baytı (8 bit)
+### Adım Adım Akış:
+
+```
+1. BIOS/UEFI POST
+   ↓
+2. GRUB Stage 1 yüklenir (MBR)
+   ↓
+3. GRUB Stage 2 yüklenir
+   ↓
+4. GRUB grub.cfg'yi okur
+   ↓
+5. GRUB kernel binary'sini tara:
+   - İlk 8KB'de multiboot header var mı?
+   - Magic = 0x1BADB002 ?
+   - Checksum doğru mu?
+   ↓
+6. Header geçerliyse:
+   - Kernel'i belleğe yükle (varsayılan: 0x100000)
+   - Multiboot info structure'ı hazırla
+   - Protected mode'a geç (32-bit)
+   - A20 hattını aç
+   ↓
+7. Kernel'e geç:
+   - EAX = 0x2BADB002 (magic)
+   - EBX = multiboot_info adresi
+   - CS = kernel code segment
+   - DS/ES/FS/GS/SS = kernel data segment
+   - ESP = stack (bootloader tarafından set edilmiş)
+   - EFLAGS = IF clear (interrupt'lar kapalı)
+   ↓
+8. Kernel çalışmaya başlar
+```
+
+### GRUB Yapılandırması:
+
+```cfg
+# iso/boot/grub/grub.cfg
+menuentry "KFS-1" {
+    multiboot /boot/kernel.bin
+    # boot
+}
+```
+
+**Basit!** GRUB otomatik olarak:
+- Multiboot header'ı bulur
+- Kernel'i yükler
+- Protected mode'a geçer
+- Kernel'i çalıştırır
+
 ---
-| Bit(ler) | Alan            | Anlam                                                                                                                                                                            |
-| -------- | --------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 7        | **P (Present)** | Bu kesme kapısı bellekte mevcut ve kullanıma hazır. Eğer bu **0** olsaydı, bu kesme tetiklendiğinde işlemci bir istisna (exception) fırlatırdı. ([wiki.osdev.org][1])                                                                         |
-| 6–5      | **DPL**         | Bu kapının ayrıcalık seviyesi **Ring 0** (kernel seviyesi). Bu, bu kapının en yüksek ayrıcalık seviyesinde olduğunu belirtir. Donanım kesmeleri için bu genellikle 0 olarak ayarlanır. ([wiki.osdev.org][1]) |
-| 4        | **S**           | Bu bit **0** olmalıdır. **0** olması bunun bir TSS (Task State Segment) değil, bir kesme veya tuzak kapısı olduğunu belirtir. ([wiki.osdev.org][2])                                                                    |
-| 3–0      | **Type**        | Bu 4 bit, kapının türünü tanımlar. 1110 (veya hex 0xE), bunun bir **"32-bit Interrupt Gate" (32-bit Kesme Kapısı)** olduğunu belirtir. ([wiki.osdev.org][2])                                                                                                                |
 
-[1]: https://wiki.osdev.org/Interrupt_Descriptor_Table "Interrupt Descriptor Table - OSDev Wiki"
-[2]: https://wiki.osdev.org/Descriptor "Descriptor - OSDev Wiki"
+## KFS-1'de Multiboot Kullanımı
 
+### 1. Multiboot Header (boot.s):
 
+```asm
+SECTION .multiboot
+align 4
+dd 0x1BADB002           ; Magic
+dd 0x00000003           ; Flags (page-align + memory)
+dd -(0x1BADB002 + 0x03) ; Checksum
+```
 
-Gate Type
+### 2. Kernel Entry Point:
+
+```asm
+SECTION .text
+start:
+    mov esp, stack_top   ; Stack setup
+    push eax             ; Magic number'ı push et
+    call kernel_main     ; C kernel'e geç
+```
+
+### 3. C Kernel:
+
+```c
+void kernel_main(uint32_t magic) {
+    if (magic != 0x2BADB002) {
+        vga_print("Error: Not booted by Multiboot!\n");
+        while (1) __asm__ volatile("hlt");
+    }
+    
+    // Kernel initialization...
+}
+```
+
+**Not:** KFS-1 şu anda multiboot_info structure'ı kullanmıyor (sadece magic kontrolü). Gelecekte bellek haritası, modül yükleme vb. için kullanılabilir.
+
 ---
-| b3..b0 | Hex | Adı/Tanım                      | IDT’de? | Not                                                                                                                          |
-| -----: | --: | ------------------------------ | :-----: | ---------------------------------------------------------------------------------------------------------------------------- |
-|   0000 | 0x0 | Rezerve                        |    ❌    | Kullanılmaz. ([scs.stanford.edu][1])                                                                                         |
-|   0001 | 0x1 | 16-bit **TSS (Available)**     |    ❌    | Yalnız **GDT**’de kullanılır. ([scs.stanford.edu][1])                                                                        |
-|   0010 | 0x2 | **LDT**                        |    ❌    | Yalnız GDT. ([scs.stanford.edu][1])                                                                                          |
-|   0011 | 0x3 | 16-bit **TSS (Busy)**          |    ❌    | Yalnız GDT. ([scs.stanford.edu][1])                                                                                          |
-|   0100 | 0x4 | **Call Gate (16-bit)**         |    ❌    | GDT/LDT’de; **IDT’ye konmaz**. ([wiki.osdev.org][2])                                                                         |
-|   0101 | 0x5 | **Task Gate**                  |    ✅*   | 32-bit korumalı kipte görev geçişi; modern sistemlerde nadir. *x86-64 (IA-32e) kipte **desteklenmez**. ([wiki.osdev.org][3]) |
-|   0110 | 0x6 | **Interrupt Gate (16-bit)**    |    ✅    | 16-bit ISR; girişte **IF=0** yapılır. ([wiki.osdev.org][2])                                                                  |
-|   0111 | 0x7 | **Trap Gate (16-bit)**         |    ✅    | 16-bit ISR; **IF değişmez**. ([wiki.osdev.org][2])                                                                           |
-|   1000 | 0x8 | Rezerve                        |    ❌    | Kullanılmaz. ([scs.stanford.edu][1])                                                                                         |
-|   1001 | 0x9 | 32-bit **TSS (Available)**     |    ❌    | Yalnız GDT; 32-bit TSS seçicisi. ([scs.stanford.edu][4])                                                                     |
-|   1010 | 0xA | Rezerve                        |    ❌    | Kullanılmaz. ([scs.stanford.edu][1])                                                                                         |
-|   1011 | 0xB | 32-bit **TSS (Busy)**          |    ❌    | Yalnız GDT. ([scs.stanford.edu][4])                                                                                          |
-|   1100 | 0xC | **Call Gate (32-bit)**         |    ❌    | GDT/LDT’de; **IDT’ye konmaz**. ([wiki.osdev.org][2])                                                                         |
-|   1101 | 0xD | Rezerve                        |    ❌    | Kullanılmaz. ([scs.stanford.edu][1])                                                                                         |
-|   1110 | 0xE | **Interrupt Gate (32/64-bit)** |    ✅    | 32-bit korumalı kipte 32-bit ISR; **x86-64’te 64-bit ISR**. IF temizlenir. ([wiki.osdev.org][2])                             |
-|   1111 | 0xF | **Trap Gate (32/64-bit)**      |    ✅    | 32-bit korumalı kipte 32-bit ISR; **x86-64’te 64-bit ISR**. IF değişmez. ([wiki.osdev.org][2])                               |
 
-[1]: https://www.scs.stanford.edu/05au-cs240c/lab/i386/s06_03.htm?utm_source=chatgpt.com "6.3 Segment-Level Protection"
-[2]: https://wiki.osdev.org/Descriptor "Descriptor - OSDev Wiki"
-[3]: https://wiki.osdev.org/Interrupt_Descriptor_Table "Interrupt Descriptor Table - OSDev Wiki"
-[4]: https://www.scs.stanford.edu/05au-cs240c/lab/i386/s07_02.htm?utm_source=chatgpt.com "7.2 TSS Descriptor"
+## GRUB vs Diğer Bootloader'lar
+
+### Bootloader Karşılaştırması:
+
+| Özellik | GRUB | Limine + Stivale2 | SYSLINUX |
+|---------|------|-------------------|----------|
+| **Protokol** | Multiboot 1/2 | Limine/Stivale2 | SYSLINUX |
+| **Amaç** | Genel amaçlı | OS dev için optimize | Basit boot |
+| **Esneklik** | Çok yüksek | Yüksek | Orta |
+| **Karmaşıklık** | Yüksek | Düşük | Düşük |
+| **Config** | grub.cfg | Minimal | syslinux.cfg |
+| **Modern OS** | ✅ | ✅ | ⚠️ |
+| **Legacy** | ✅ | ❌ | ✅ |
+| **Kernel bilgi** | Multiboot yapıları | Stivale2 yapıları | Basit |
+
+### Neden GRUB?
+
+- ✅ **Yaygın**: Her Linux dağıtımında var
+- ✅ **Multiboot standardı**: Tanınmış, dokümante
+- ✅ **Kolay test**: QEMU ile hızlı boot
+- ✅ **Güvenilir**: Yıllardır kullanılıyor
+
+---
+
+## Debug ve Test
+
+### Multiboot Header Doğrulama:
+
+```bash
+# grub-file ile kontrol
+grub-file --is-x86-multiboot kernel.bin
+echo $?  # 0 = geçerli, 1 = geçersiz
+
+# objdump ile header görüntüleme
+objdump -s -j .multiboot kernel.bin
+```
+
+### Beklenen Çıktı:
+
+```
+Contents of section .multiboot:
+ 100000 02b0ad1b 03000000 fbff524e  ..........RN
+```
+
+- `02b0ad1b` = 0x1BADB002 (little-endian)
+- `03000000` = 0x00000003 (flags)
+- `fbff524e` = checksum
+
+### QEMU ile Debug:
+
+```bash
+# QEMU log
+qemu-system-i386 -cdrom kfs.iso -d int,cpu_reset
+
+# GDB debug
+qemu-system-i386 -cdrom kfs.iso -s -S
+gdb kernel.bin
+(gdb) target remote localhost:1234
+(gdb) break start
+(gdb) continue
+(gdb) info registers eax ebx  # Magic ve multiboot_info
+```
+
+### Yaygın Hatalar:
+
+| Hata | Sebep | Çözüm |
+|------|-------|-------|
+| GRUB kernel'i yüklemiyor | Header yok/yanlış | İlk 8KB'de olmalı |
+| "Not a multiboot kernel" | Magic yanlış | 0x1BADB002 olmalı |
+| Checksum hatası | Hesaplama yanlış | -(magic + flags) |
+| Kernel çöküyor | Magic kontrol yok | EAX = 0x2BADB002? |
+
+---
+
+## Özet
+
+1. **Multiboot Header** → Kernel'in ilk 8KB'sinde, magic + flags + checksum
+2. **GRUB** → Header'ı bulur, kernel'i yükler, protected mode'a geçer
+3. **EAX** → 0x2BADB002 (bootloader magic)
+4. **EBX** → multiboot_info structure adresi (opsiyonel kullanım)
+5. **Kernel** → Magic'i kontrol eder ve başlar
+
+**Sonuç:** Multiboot, bootloader ve kernel arasında standart bir arayüz sağlar!
+
+---
+
+## Kaynaklar
+
+- [GNU Multiboot Specification 1.0](https://www.gnu.org/software/grub/manual/multiboot/multiboot.html)
+- [Multiboot 2 Specification](https://www.gnu.org/software/grub/manual/multiboot2/multiboot.html)
+- [OSDev Wiki - Multiboot](https://wiki.osdev.org/Multiboot)
+- [GRUB Manual](https://www.gnu.org/software/grub/manual/)
+
+---
+
+[⬅️ Ana Sayfa](README.md) | [Boot Process ➡️](boot-process.md) | [GRUB Config ➡️](../iso/boot/grub/grub.cfg)

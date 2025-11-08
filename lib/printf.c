@@ -1,5 +1,6 @@
 #include "printf.h"
 #include "utils.h"
+
 void		putchar(char c);
 
 int	print_char(int c)

@@ -1,13 +1,14 @@
-#include "keyboard.h"
-#include "../screen/screen.h"
 #include "../../arch/boot/io.h"
-static input_command_t		cmd_queue[CMD_QUEUE_SIZE];
-static int					head = 0, tail = 0;
-static uint8_t				key_state[128];
-repeat_state_t				repeat = {0};
+#include "../screen/screen.h"
+#include "keyboard.h"
 
-extern volatile uint16_t	*vga_buffer;
-extern volatile uint8_t		vga_color;
+static volatile input_command_t	cmd_queue[CMD_QUEUE_SIZE];
+static volatile int				head = 0, tail = 0;
+static volatile uint8_t			key_state[128];
+volatile repeat_state_t			repeat = {0};
+
+extern volatile uint16_t		*vga_buffer;
+extern volatile uint8_t			vga_color;
 
 static int	queue_is_full(void)
 {

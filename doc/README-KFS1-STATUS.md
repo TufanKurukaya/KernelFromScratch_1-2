@@ -1,6 +1,4 @@
-# KFS_1 Uygunluk Özeti (27 Ekim 2025)
-
-Bu dosya, "KFS_1 – Grub, boot and screen" PDF’indeki (kfs.1.en.pdf) gereksinimlere göre mevcut projenin durumunu özetler. Zorunlu ve bonus isterler PDF’in tamamı dikkate alınarak iki başlık altında listelenmiştir.
+# KFS_1 Uygunluk Özeti
 
 ## Uygun Olanlar
 

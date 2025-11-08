@@ -69,6 +69,9 @@ run: iso
 run-k: $(TARGET)
 	qemu-system-i386 -kernel $(TARGET)
 
+debug: iso
+	qemu-system-i386 -cdrom $(ISO) -d int,cpu_reset
+
 # ==========================================================
 # 🧹 Temizlik
 # ==========================================================

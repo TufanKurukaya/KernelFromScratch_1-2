@@ -1,17 +1,17 @@
 // src/kernel.c
+#include "../arch/boot/io.h"
 #include "../arch/gdt/gdt.h"
 #include "../arch/idt/idt.h"
 #include "../arch/pic/pic.h"
-#include "../arch/boot/io.h"
 #include "../hw/keyboard/keyboard.h"
-#include "../lib/printf.h"
 #include "../hw/screen/screen.h"
-#include "../lib/utils.h"
-#include "../hw/vga/vga.h"
 #include "../hw/shell/shell.h"
+#include "../hw/vga/vga.h"
+#include "../lib/printf.h"
+#include "../lib/utils.h"
+#include "kernel.h"
 #include <stddef.h>
 #include <stdint.h>
-#include "kernel.h"
 
 void	kernel_main(uint32_t magic)
 {

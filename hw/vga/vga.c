@@ -1,13 +1,13 @@
-#include "vga.h"
-#include "../screen/screen.h"
 #include "../../arch/boot/io.h"
+#include "../screen/screen.h"
+#include "vga.h"
 
-volatile uint16_t		*vga_buffer = (volatile uint16_t *)VGA_MEM;
-volatile uint8_t		vga_color = 0x07;
+volatile uint16_t	*vga_buffer = (volatile uint16_t *)VGA_MEM;
+volatile uint8_t	vga_color = 0x07;
 
-void	vga_print(const char *s) //vga
+void	vga_print(const char *s) // vga
 {
-	size_t	i;
+	size_t i;
 
 	i = 0;
 	while (s[i])
@@ -136,7 +136,8 @@ void	putchar(char c)
 	else if (c == '\b')
 	{
 		if (cursor_x == VGA_WIDTH - 1)
-			vga_buffer[cursor_y * VGA_WIDTH + cursor_x] = ' ' | (uint16_t)vga_color << 8;
+			vga_buffer[cursor_y * VGA_WIDTH
+				+ cursor_x] = ' ' | (uint16_t)vga_color << 8;
 		else
 			shift_left_line();
 		if (cursor_x > 0)
@@ -157,4 +158,3 @@ void	putchar(char c)
 		scroll();
 	vga_update_hw_cursor();
 }
-

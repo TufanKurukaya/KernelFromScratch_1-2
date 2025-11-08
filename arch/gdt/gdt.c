@@ -1,12 +1,11 @@
 // src/gdt.c
-#include "gdt.h"
 #include "../../lib/utils.h"
+#include "gdt.h"
 
 static struct gdt_entry	gdt[6];
 struct gdt_ptr			gdtp;
 extern void				gdt_load(void);
 extern void				gdt_reload_segments(void);
-
 
 static void	gdt_set(int idx, uint32_t base, uint32_t limit, uint8_t access,
 		uint8_t gran)
@@ -34,7 +33,6 @@ static void	gdt_set(int idx, uint32_t base, uint32_t limit, uint8_t access,
 // gdt[2] = 0x00CF92000000FFFF;
 // gdt[3] = 0x00CFFA000000FFFF;
 // gdt[4] = 0x00CFF2000000FFFF;
-
 
 void	gdt_init(void)
 {

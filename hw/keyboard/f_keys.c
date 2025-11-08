@@ -1,19 +1,18 @@
-#include "keyboard.h"
-#include "../vga/vga.h"
 #include "../screen/screen.h"
+#include "../vga/vga.h"
+#include "keyboard.h"
 
 typedef void			(*f_key_handler_t)(void);
-f_key_handler_t	f_keys[12] = {f1_handler, f2_handler, f3_handler,
-		f4_handler, f5_handler, f6_handler, f7_handler, f8_handler, f9_handler,
-		f10_handler, NULL, NULL};
+f_key_handler_t			f_keys[12] = {f1_handler, f2_handler, f3_handler,
+				f4_handler, f5_handler, f6_handler, f7_handler, f8_handler,
+				f9_handler, f10_handler, NULL, NULL};
 
-static uint8_t				fg_index = 0;
+static uint8_t			fg_index = 0;
 
-static const uint8_t		fg_cycle[] = {VGA_WHITE, VGA_LIGHT_GREY, VGA_YELLOW,
-			VGA_LIGHT_RED, VGA_LIGHT_GREEN, VGA_LIGHT_CYAN, VGA_LIGHT_BLUE,
-			VGA_LIGHT_MAGENTA, VGA_MAGENTA, VGA_RED, VGA_GREEN, VGA_CYAN,
-			VGA_BLUE, VGA_BROWN, VGA_DARK_GREY};
-
+static const uint8_t	fg_cycle[] = {VGA_WHITE, VGA_LIGHT_GREY, VGA_YELLOW,
+		VGA_LIGHT_RED, VGA_LIGHT_GREEN, VGA_LIGHT_CYAN, VGA_LIGHT_BLUE,
+		VGA_LIGHT_MAGENTA, VGA_MAGENTA, VGA_RED, VGA_GREEN, VGA_CYAN, VGA_BLUE,
+		VGA_BROWN, VGA_DARK_GREY};
 
 // F-key handler functions
 void	f1_handler(void)

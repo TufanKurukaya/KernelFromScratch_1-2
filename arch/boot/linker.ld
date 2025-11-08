@@ -4,7 +4,7 @@ ENTRY(start)
 SECTIONS
 {
   /* Çekirdeği 1MB adresine yerleştir */
-  . = 0x80000;
+  . = 1M;
 
   .multiboot ALIGN(4K) : { build/arch/boot/boot.o(.multiboot) }
   .text ALIGN(4K) : { *(.text*) }

@@ -106,8 +106,7 @@ void	*memset(void *s, int c, size_t n)
 	return (s);
 }
 
-
-int strcmp(char *dst, char *src)
+int	strcmp(char *dst, char *src)
 {
 	size_t i;
 

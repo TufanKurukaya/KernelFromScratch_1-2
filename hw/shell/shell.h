@@ -3,10 +3,10 @@
 
 void	command_enter(void);
 void	process_command(char *vga_buf);
-void    reboot();
-void    halt();
-void    print_stack();
-void    cmd_clear();
-void    cmd_help();
+void	reboot(void);
+void	halt(void);
+void	print_stack(void);
+void	cmd_clear(void);
+void	cmd_help(void);
 
 #endif

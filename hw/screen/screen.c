@@ -5,8 +5,8 @@ extern volatile uint8_t		vga_color;
 t_screen					screens[3] = {0};
 int							current_screen = 0;
 size_t						cursor_x = 0, cursor_y = 0;
-volatile t_history			history = {.edit_backup[0] = '\0', .index = 0,
-			.cursor = HISTORY_MAX - 1};
+t_history					history = {.edit_backup[0] = '\0', .index = 0,
+						.cursor = HISTORY_MAX - 1};
 
 void	set_cursor_pos(size_t x, size_t y)
 {

@@ -62,35 +62,41 @@ Bu proje 42 Okulu müfredatının bir parçasıdır ve düşük seviyeli sistem 
 
 ## 🏗️ Mimari
 
-```
-┌─────────────────────────────────────────────────────────┐
-│                    KFS-1 Mimarisi                       │
-├─────────────────────────────────────────────────────────┤
-│                                                         │
-│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐   │
-│  │ Kullanıcı Alanı│  │    Kabuk     │  │   Komutlar   │   │
-│  │  (Gelecek)   │  │   (Aktif)    │  │  help/stack  │   │
-│  └──────┬───────┘  └──────┬───────┘  └──────┬───────┘   │
-│         │                 │                  │          │
-│  ┌──────▼─────────────────▼──────────────────▼───────┐  │
-│  │           Çekirdek Katmanı (Ring 0)                 │  │
-│  │  - GDT/IDT Yönetimi                               │  │
-│  │  - Kesme İşleyicileri                             │  │
-│  │  - Bellek Yönetimi (Temel)                        │  │
-│  └───────────────────────┬───────────────────────────┘  │
-│                          │                              │
-│  ┌───────────────────────▼───────────────────────────┐  │
-│  │    Donanım Soyutlama Katmanı (HAL)                  │  │
-│  │  - Klavye Sürücüsü    - VGA Sürücüsü              │  │
-│  │  - PIC Kontrolcüsü    - I/O Portları              │  │
-│  └───────────────────────┬───────────────────────────┘  │
-│                          │                              │
-│  ┌───────────────────────▼───────────────────────────┐  │
-│  │              Donanım Katmanı                        │  │
-│  │  CPU (x86) | RAM | Klavye | VGA Ekran             │  │
-│  └───────────────────────────────────────────────────┘  │
-│                                                         │
-└─────────────────────────────────────────────────────────┘
+```mermaid
+flowchart TB
+
+%% Üst katman
+subgraph UserSpace["Kullanıcı Alanı (Gelecek)"]
+end
+subgraph Shell["Kabuk (Aktif)"]
+end
+subgraph Commands["Komutlar (help / stack)"]
+end
+
+UserSpace --> Kernel
+Shell --> Kernel
+Commands --> Kernel
+
+%% Çekirdek
+subgraph Kernel["Çekirdek Katmanı (Ring 0)"]
+direction LR
+A1["GDT / IDT Yönetimi"] --- A2["Kesme İşleyicileri"] --- A3["Bellek Yönetimi (Temel)"]
+end
+
+%% HAL (geniş etiket için padding)
+Kernel --> HAL
+subgraph HAL["     Donanım Soyutlama Katmanı (HAL)     "]
+direction LR
+H1["Klavye Sürücüsü"] --- H2["VGA Sürücüsü"] --- H3["PIC Kontrolcüsü"] --- H4["I/O Portları"]
+end
+
+%% Donanım
+HAL --> HW
+subgraph HW["Donanım Katmanı"]
+direction LR
+W1["CPU (x86)"] --- W2["RAM"] --- W3["Klavye"] --- W4["VGA Ekran"]
+end
+
 ```
 
 Detaylı mimari ve sistem akışı için bkz. [System Flow Diagram](https://www.google.com/search?q=system-flow.md).
